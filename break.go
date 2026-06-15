@@ -50,6 +50,6 @@ func (m breakModel) View() tea.View {
 	panel += fmt.Sprintf("Time Remaining: %s\n\n", timerStyle.Render(fmt.Sprintf("%02d:%02d", mins, secs)))
 	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B")).Render("[s] Skip Break")
 
-	uiLayout := lipgloss.JoinHorizontal(lipgloss.Top, catASCII, "    ", panel)
+	uiLayout := lipgloss.JoinVertical(lipgloss.Top, catASCII, "    ", panel)
 	return tea.NewView(lipgloss.NewStyle().Padding(2, 4).Render(uiLayout))
 }

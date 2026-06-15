@@ -1,0 +1,13 @@
+nohup: ignoring input
+🚀 Session active! Go start your task. Sigcat is watching.
+2026/06/15 20:05:34 🐱 sigcat daemon monitoring session...
+2026/06/15 20:05:34 Detected terminal emulator: kitty
+2026/06/15 20:05:44 Timer hit! Opening break terminal...
+2026/06/15 20:05:44 UI successfully dispatched in background.
+2026/06/15 20:05:54 TUI window is open. Skipping this tick.
+2026/06/15 20:06:04 Daemon is paused until 20:06:56. Skipping tick.
+2026/06/15 20:06:14 Daemon is paused until 20:06:56. Skipping tick.
+2026/06/15 20:06:24 Daemon is paused until 20:06:56. Skipping tick.
+2026/06/15 20:06:34 Daemon is paused until 20:06:56. Skipping tick.
+2026/06/15 20:06:44 Daemon is paused until 20:06:56. Skipping tick.
+2026/06/15 20:06:54 Daemon is paused until 20:06:56. Skipping tick.

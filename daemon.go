@@ -52,10 +52,25 @@ func runDaemon() {
 	lockPath := os.Getenv("HOME") + "/.config/sigcat/ui.lock"
 
 	for range ticker.C {
-		// 🛑 NEW: Check if the TUI is already open
-		if _, err := os.Stat(lockPath); err == nil {
-			log.Println("TUI is currently active. Skipping timer tick to prevent duplicate popups.")
-			continue // Skip this iteration and wait for the next 10s tick
+		// Read what is inside the lock file
+		if data, err := os.ReadFile(lockPath); err == nil {
+			status := string(data)
+
+			// Case A: The UI window is actively open right now
+			if status == "active" {
+				log.Println("TUI window is open. Skipping this tick.")
+				continue
+			}
+
+			// Case B: The UI window closed, checking if our grace period timestamp is still active
+			if pauseTime, err := time.Parse(time.RFC3339, status); err == nil {
+				if time.Now().Before(pauseTime) {
+					log.Printf("Daemon is paused until %s. Skipping tick.\n", pauseTime.Format("15:04:05"))
+					continue
+				}
+				// If the pause time has expired, clear the file out cleanly
+				os.Remove(lockPath)
+			}
 		}
 
 		log.Println("Timer hit! Opening break terminal...")
@@ -65,12 +80,14 @@ func runDaemon() {
 			executable = os.Args[0]
 		}
 
-		cmd := exec.Command(terminalApp, "-e", executable, "--ui=break")
+		cmd := exec.Command(terminalApp, "--", executable, "--ui=break")
 		cmd.Env = append(os.Environ(), "DISPLAY=:0")
 
-		err = cmd.Run()
+		err = cmd.Start()
 		if err != nil {
 			log.Printf("Spawn error: %v\n", err)
+		} else {
+			log.Println("UI successfully dispatched in background.")
 		}
 	}
 }
