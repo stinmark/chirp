@@ -42,18 +42,14 @@ func main() {
 	if *uiMode == "break" {
 		lockPath := os.Getenv("HOME") + "/.config/sigcat/ui.lock"
 
-		os.MkdirAll(os.Getenv("HOME")+"/.config/sigcat", 0o755)
-		// Mark as active so multiple copies don't spawn simultaneously
-		os.WriteFile(lockPath, []byte("active"), 0o644)
-
+		// Run the TUI session
 		p := tea.NewProgram(breakModel{timeLeft: 10 * time.Second})
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
 
-		// Instead of deleting the lock file instantly (which causes an instant re-trigger),
-		// write a timestamp telling the daemon to pause for 1 minute.
-		pauseDuration := 1 * time.Minute
+		// Write a timestamp telling the daemon to pause for 1 minute
+		pauseDuration := 10 * time.Second
 		pauseUntil := time.Now().Add(pauseDuration).Format(time.RFC3339)
 
 		err := os.WriteFile(lockPath, []byte(pauseUntil), 0o644)

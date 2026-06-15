@@ -75,17 +75,24 @@ func runDaemon() {
 
 		log.Println("Timer hit! Opening break terminal...")
 
+		// 1. Lock immediately before spawning to prevent a race condition on the next tick
+		os.MkdirAll(os.Getenv("HOME")+"/.config/sigcat", 0o755)
+		_ = os.WriteFile(lockPath, []byte("active"), 0o644)
+
 		executable, err := os.Executable()
 		if err != nil {
 			executable = os.Args[0]
 		}
 
+		// 2. Pass your full system environment (keeps display tokens and window managers happy)
 		cmd := exec.Command(terminalApp, "--", executable, "--ui=break")
-		cmd.Env = append(os.Environ(), "DISPLAY=:0")
+		cmd.Env = os.Environ()
 
 		err = cmd.Start()
 		if err != nil {
 			log.Printf("Spawn error: %v\n", err)
+			// If spawning failed entirely, clear the lock so it can try again next tick
+			os.Remove(lockPath)
 		} else {
 			log.Println("UI successfully dispatched in background.")
 		}
