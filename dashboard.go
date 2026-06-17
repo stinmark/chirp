@@ -180,29 +180,39 @@ func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.inputs[m.inputIndex].Blur()  //[cite: 1]
 					m.inputIndex++                 //[cite: 1]
 					m.inputs[m.inputIndex].Focus() //[cite: 1]
-				} else { //[cite: 1]
-					mins, err := strconv.Atoi(strings.TrimSpace(m.inputs[2].Value())) //[cite: 1]
-					if err != nil || mins <= 0 {                                      //[cite: 1]
-						m.errMessage = "Duration must be a valid positive integer." //[cite: 1]
-						return m, nil                                               //[cite: 1]
+					// ... inside dashboard.go (createTask state handler)
+				} else {
+					rawMins := strings.TrimSpace(m.inputs[2].Value())
+					if rawMins == "" {
+						rawMins = "20" // Use explicit fallback default if string was completely empty
 					}
 
-					autoID := GenerateShortID() //[cite: 1]
-					newTask := BreakTask{       //[cite: 1]
-						ID:          autoID,                                            //[cite: 1]
-						Title:       m.inputs[0].Value(),                               //[cite: 1]
-						Message:     m.inputs[1].Value(),                               //[cite: 1]
-						DurationMin: mins,                                              //[cite: 1]
-						AutoRepeat:  strings.ToLower(m.inputs[3].Value()) == "y",       //[cite: 1]
-						IsActive:    true,                                              //[cite: 1]
-						NextRun:     time.Now().Add(time.Duration(mins) * time.Minute), //[cite: 1]
+					mins, err := strconv.Atoi(rawMins)
+					if err != nil || mins <= 0 {
+						m.errMessage = "Duration must be a valid positive integer."
+						return m, nil
 					}
-					m.tasks = append(m.tasks, newTask) //[cite: 1]
-					_ = SaveTasks(m.tasks)             //[cite: 1]
-					startDaemon()                      //[cite: 1]
 
-					m.state = viewTasks //[cite: 1]
-					return m, nil       //[cite: 1]
+					// Read input value properly for yes/no choice
+					repeatVal := strings.ToLower(strings.TrimSpace(m.inputs[3].Value()))
+					isRepeat := repeatVal == "y" || repeatVal == "yes" || repeatVal == ""
+
+					autoID := GenerateShortID()
+					newTask := BreakTask{
+						ID:          autoID,
+						Title:       m.inputs[0].Value(),
+						Message:     m.inputs[1].Value(),
+						DurationMin: mins,
+						AutoRepeat:  isRepeat,
+						IsActive:    true,
+						NextRun:     time.Now().Add(time.Duration(mins) * time.Minute),
+					}
+					m.tasks = append(m.tasks, newTask)
+					_ = SaveTasks(m.tasks)
+					startDaemon()
+
+					m.state = viewTasks
+					return m, nil
 				}
 			}
 		}

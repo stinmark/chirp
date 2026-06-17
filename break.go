@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -12,7 +13,8 @@ import (
 var catASCII string
 
 type breakModel struct {
-	task BreakTask
+	task          BreakTask
+	daemonRunning bool
 }
 
 func initialBreakModel(id string) breakModel {
@@ -28,29 +30,33 @@ func initialBreakModel(id string) breakModel {
 		targeted = BreakTask{Title: "Take a Break!", Message: "Time to stretch and look away."}
 	}
 	return breakModel{
-		task: targeted,
+		task:          targeted,
+		daemonRunning: isDaemonRunning(), // Detect background state status directly
 	}
 }
 
-func (m breakModel) Init() tea.Cmd { return nil } // No timer needed anymore
+func (m breakModel) Init() tea.Cmd { return nil }
 
 func (m breakModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "s", "q", "escape":
-			// Just quit/close the window
 			return m, tea.Quit
 
 		case "r":
-			// Manually repeat/postpone the task:
-			// Reload task list, find this task, and push its next run forward.
 			tasks, err := LoadTasks()
 			if err == nil {
 				for i, t := range tasks {
 					if t.ID == m.task.ID {
-						tasks[i].IsActive = true
-						tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
+						if t.AutoRepeat {
+							// If it's already on repeat, pressing 'r' turns the loop off completely
+							tasks[i].AutoRepeat = false
+						} else {
+							// If it's not repeating, 'r' functions as a normal postpone/repeat trigger
+							tasks[i].IsActive = true
+							tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
+						}
 						break
 					}
 				}
@@ -66,12 +72,28 @@ func (m breakModel) View() tea.View {
 	catStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("#AEB6FC")).Render(catASCII)
 	bannerTitle := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Render(m.task.Title)
 
+	// Contextual tracking indicators
+	daemonStatus := lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444")).Render("● Daemon Offline")
+	if m.daemonRunning {
+		daemonStatus = lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E")).Render("● Daemon Active")
+	}
+
 	var panel string
 	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#FFB8D1")).Bold(true).Render(m.task.Message) + "\n\n"
-	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E")).Render("✨ Status: Completed / Standing By\n\n")
+	panel += fmt.Sprintf("⚙️ Context: %s\n", daemonStatus)
 
-	// Updated dynamic controls footer
-	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B")).Render("[s] Close Window  •  [r] Repeat Task Timer")
+	if m.task.AutoRepeat {
+		panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#AEB6FC")).Render("🔄 Status: Loop Mode Engaged\n\n")
+	} else {
+		panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B")).Render("⏳ Status: Manual Run Executed\n\n")
+	}
+
+	// Informative helper keys menu change
+	actionText := "[s] Dismiss Window  •  [r] Stop Repeat Loop"
+	if !m.task.AutoRepeat {
+		actionText = "[s] Dismiss Window  •  [r] Repeat Task Tracker"
+	}
+	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B")).Render(actionText)
 
 	uiLayout := lipgloss.JoinHorizontal(lipgloss.Bottom, panel, catStyled)
 	combinedView := lipgloss.NewStyle().Padding(2, 4).Render(lipgloss.JoinVertical(lipgloss.Center, bannerTitle, uiLayout))
