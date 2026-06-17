@@ -1,55 +1,82 @@
 package main
 
 import (
-	"fmt"
+	_ "embed"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
+//go:embed cat.txt
+var catASCII string
+
 type breakModel struct {
-	timeLeft time.Duration
+	task BreakTask
 }
 
-func (m breakModel) Init() tea.Cmd {
-	return tickCmd()
+func initialBreakModel(id string) breakModel {
+	tasks, _ := LoadTasks()
+	var targeted BreakTask
+	for _, t := range tasks {
+		if t.ID == id {
+			targeted = t
+			break
+		}
+	}
+	if targeted.ID == "" {
+		targeted = BreakTask{Title: "Take a Break!", Message: "Time to stretch and look away."}
+	}
+	return breakModel{
+		task: targeted,
+	}
 }
+
+func (m breakModel) Init() tea.Cmd { return nil } // No timer needed anymore
 
 func (m breakModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		if msg.String() == "s" {
-			return m, tea.Quit // Skip break
+		switch msg.String() {
+		case "s", "q", "escape":
+			// Just quit/close the window
+			return m, tea.Quit
+
+		case "r":
+			// Manually repeat/postpone the task:
+			// Reload task list, find this task, and push its next run forward.
+			tasks, err := LoadTasks()
+			if err == nil {
+				for i, t := range tasks {
+					if t.ID == m.task.ID {
+						tasks[i].IsActive = true
+						tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
+						break
+					}
+				}
+				_ = SaveTasks(tasks)
+			}
+			return m, tea.Quit
 		}
-	case tickMsg:
-		if m.timeLeft > 0 {
-			m.timeLeft -= time.Second
-			return m, tickCmd()
-		}
-		return m, tea.Quit // Break complete, auto-close
 	}
 	return m, nil
 }
 
 func (m breakModel) View() tea.View {
-	mins := int(m.timeLeft.Minutes())
-	secs := int(m.timeLeft.Seconds()) % 60
-
-	catASCII := `
-    /\_/\   🧘 Break Time!
-   ( o.o )  Step away from
-    > ^ <   the screen.
-   /     \ 
-  (|  |  |)`
-
-	timerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFB8D1")).Bold(true)
+	catStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("#AEB6FC")).Render(catASCII)
+	bannerTitle := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true).Render(m.task.Title)
 
 	var panel string
-	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#AEB6FC")).Bold(true).Render("✨ REFRESH YOUR MIND ✨") + "\n\n"
-	panel += fmt.Sprintf("Time Remaining: %s\n\n", timerStyle.Render(fmt.Sprintf("%02d:%02d", mins, secs)))
-	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B")).Render("[s] Skip Break")
+	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#FFB8D1")).Bold(true).Render(m.task.Message) + "\n\n"
+	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E")).Render("✨ Status: Completed / Standing By\n\n")
 
-	uiLayout := lipgloss.JoinVertical(lipgloss.Top, catASCII, "    ", panel)
-	return tea.NewView(lipgloss.NewStyle().Padding(2, 4).Render(uiLayout))
+	// Updated dynamic controls footer
+	panel += lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B")).Render("[s] Close Window  •  [r] Repeat Task Timer")
+
+	uiLayout := lipgloss.JoinHorizontal(lipgloss.Bottom, panel, catStyled)
+	combinedView := lipgloss.NewStyle().Padding(2, 4).Render(lipgloss.JoinVertical(lipgloss.Center, bannerTitle, uiLayout))
+
+	v := tea.NewView(combinedView)
+	v.AltScreen = true
+	return v
 }
