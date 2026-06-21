@@ -1,3 +1,4 @@
+// Package helpers where the utility functions used by other parts live
 package helpers
 
 import (
@@ -35,4 +36,11 @@ func StartDaemon() {
 func StopDaemon() {
 	cmd := exec.Command("pkill", "-f", "sigcat --run-daemon")
 	_ = cmd.Run()
+}
+
+func Ternary(cond bool, trueVal, falseVal string) string {
+	if cond {
+		return trueVal
+	}
+	return falseVal
 }

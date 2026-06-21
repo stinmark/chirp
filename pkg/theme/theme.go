@@ -1,3 +1,4 @@
+// Package theme that stores looks of the app
 package theme
 
 import (
@@ -25,10 +26,15 @@ var (
 	ErrorStyle = lipgloss.NewStyle().Foreground(RedColor).Bold(true)
 	HelpStyle  = lipgloss.NewStyle().Foreground(SubtleColor).Italic(true)
 	FocusStyle = lipgloss.NewStyle().Foreground(PinkColor).Bold(true)
+	MutedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Italic(true)
+	ActiveStye = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true)
+	InputStyle = lipgloss.NewStyle().Background(lipgloss.Color("#585b70")).
+			Foreground(lipgloss.Color("#cdd6f4")).
+			Padding(0, 1).Width(40)
 
 	// Clean background highlight style for active selections
 	SelectedItemStyle = lipgloss.NewStyle().
-				Background(PurpleColor).
-				Foreground(DarkSlate).
+				Border(lipgloss.NormalBorder(), false, false, false, true).
+				BorderForeground(lipgloss.Color("1")).
 				Bold(true)
 )

@@ -54,19 +54,26 @@ func InitialDashboardModel() dashboardModel {
 	taskGrid.SetShowStatusBar(false)
 	taskGrid.SetShowHelp(false)
 
+	// Fixes the layout to show exactly 5 items (5 items * 2 lines + 4 gaps * 1 line)
+	taskGrid.SetSize(80, 14)
+
 	inputs := make([]textinput.Model, 4)
 	inputs[0] = textinput.New()
-	inputs[0].Placeholder = "Stretch Break"
+	inputs[0].Placeholder = ""
+	inputs[0].Prompt = ""
 	inputs[0].Focus()
 
 	inputs[1] = textinput.New()
-	inputs[1].Placeholder = "Look away for 20 seconds!"
+	inputs[1].Placeholder = ""
+	inputs[1].Prompt = ""
 
 	inputs[2] = textinput.New()
-	inputs[2].Placeholder = "20"
+	inputs[2].Placeholder = ""
+	inputs[2].Prompt = ""
 
 	inputs[3] = textinput.New()
-	inputs[3].Placeholder = "y/n"
+	inputs[3].Placeholder = ""
+	inputs[3].Prompt = ""
 
 	return dashboardModel{
 		state:         viewTasks,

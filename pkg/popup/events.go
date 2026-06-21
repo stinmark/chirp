@@ -9,6 +9,18 @@ import (
 
 func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	// 1. Listen for the animation timer tick
+	case FrameMsg:
+		if len(m.frames) == 0 {
+			return m, nil
+		}
+		m.currentFrame = (m.currentFrame + 1) % len(m.frames)
+
+		// Schedule the loop tick for the subsequent frame
+		return m, tea.Tick(m.delays[m.currentFrame], func(t time.Time) tea.Msg {
+			return FrameMsg{}
+		})
+
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "s", "q", "escape":
@@ -20,10 +32,8 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				for i, t := range tasks {
 					if t.ID == m.Task.ID {
 						if t.AutoRepeat {
-							// Turn the repeat sequence loop off completely if requested
 							tasks[i].AutoRepeat = false
 						} else {
-							// Shift time constraints onward to postpone safely
 							tasks[i].IsActive = true
 							tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
 						}
