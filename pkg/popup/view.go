@@ -1,8 +1,7 @@
 package popup
 
 import (
-	"fmt"
-
+	"github.com/austinemk/sigcat/pkg/helpers"
 	"github.com/austinemk/sigcat/pkg/theme"
 
 	tea "charm.land/bubbletea/v2"
@@ -10,35 +9,34 @@ import (
 )
 
 func (m PopupModel) View() tea.View {
-	// 1. Fetch current frame string or fallback text safely
-	activeFrame := "Loading animation..."
+	// Safely retrieve the active Braille string frame
+	activeArt := ""
 	if len(m.frames) > 0 {
-		activeFrame = m.frames[m.currentFrame]
+		activeArt = m.frames[m.currentFrame]
 	}
 
-	// 2. Lip Gloss styles will safely style raw ANSI character sequences out-of-the-box
-	gifStyled := lipgloss.NewStyle().Foreground(theme.PurpleColor).Render(activeFrame)
+	// Give the Braille art a clean, muted look like the screenshot (e.g., subtle blue/gray)
+	artStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render(activeArt)
 
 	bannerTitle := theme.GenerateTexturedShadowTitle(theme.TruncateString(m.Task.Title, 7, false), "#AEB6FC")
 
-	daemonStatus := lipgloss.NewStyle().Foreground(theme.RedColor).Render("● Daemon Offline")
-	if m.DaemonRunning {
-		daemonStatus = lipgloss.NewStyle().Foreground(theme.GreenColor).Render("● Daemon Active")
-	}
-
 	var panel string
-	panel += lipgloss.NewStyle().Foreground(theme.PinkColor).Width(40).Italic(true).Bold(true).Render(m.Task.Message) + "\n\n"
-	panel += fmt.Sprintf("⚙️ Context: %s\n", daemonStatus)
+	panel += theme.AccentStyle.Width(30).Render(m.Task.Message) + "\n\n"
+	panel += theme.MutedStyle.Render("status: "+helpers.Ternary(m.DaemonRunning, "● daemon active", "● daemon stopped")) + "\n"
 
 	if m.Task.AutoRepeat {
-		panel += lipgloss.NewStyle().Foreground(theme.PurpleColor).Render("🔄 Status: Loop Mode Engaged\n\n")
+		panel += theme.ActiveStye.Render("mode: AutoRepeat\n")
+		panel += theme.MutedStyle.Render("[r] stop repeat [s/q] quit")
 	} else {
-		panel += lipgloss.NewStyle().Foreground(theme.SubtleColor).Render("⏳ Status: Manual Run Executed\n\n")
+		panel += theme.ActiveStye.Render("mode: Run Once\n")
+		panel += theme.MutedStyle.Render("[r] repeat [s/q] quit")
 	}
 
-	// 3. Align the animation horizontally next to text payload
-	uiLayout := lipgloss.JoinHorizontal(lipgloss.Bottom, panel, gifStyled)
-	combinedView := lipgloss.NewStyle().Padding(2, 4).Render(lipgloss.JoinVertical(lipgloss.Center, bannerTitle, uiLayout))
+	// Side-by-side alignment: info text panel on the left, Braille art on the right
+	uiLayout := lipgloss.JoinHorizontal(lipgloss.Center, panel, artStyled)
+
+	combinedView := lipgloss.NewStyle().Padding(2, 4).
+		Render(lipgloss.JoinVertical(lipgloss.Center, bannerTitle, uiLayout))
 
 	v := tea.NewView(combinedView)
 	v.AltScreen = true

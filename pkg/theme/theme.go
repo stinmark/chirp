@@ -21,14 +21,15 @@ var (
 // 2. Structural & Text Styles
 // ==========================================
 var (
-	TitleStyle = lipgloss.NewStyle().Foreground(PurpleColor).Bold(true).Padding(0, 1)
-	CardStyle  = lipgloss.NewStyle().Padding(1, 2).MarginBottom(1)
-	ErrorStyle = lipgloss.NewStyle().Foreground(RedColor).Bold(true)
-	HelpStyle  = lipgloss.NewStyle().Foreground(SubtleColor).Italic(true)
-	FocusStyle = lipgloss.NewStyle().Foreground(PinkColor).Bold(true)
-	MutedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Italic(true)
-	ActiveStye = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true)
-	InputStyle = lipgloss.NewStyle().Background(lipgloss.Color("#585b70")).
+	TitleStyle  = lipgloss.NewStyle().Foreground(PurpleColor).Bold(true).Padding(0, 1)
+	CardStyle   = lipgloss.NewStyle().Padding(1, 2).MarginBottom(1)
+	ErrorStyle  = lipgloss.NewStyle().Foreground(RedColor).Bold(true)
+	HelpStyle   = lipgloss.NewStyle().Foreground(SubtleColor).Italic(true)
+	FocusStyle  = lipgloss.NewStyle().Foreground(PinkColor).Bold(true)
+	AccentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+	MutedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Italic(true)
+	ActiveStye  = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true)
+	InputStyle  = lipgloss.NewStyle().Background(lipgloss.Color("#585b70")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).Width(40)
 

@@ -9,15 +9,17 @@ import (
 
 func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	// 1. Listen for the animation timer tick
+
+	// Handle the simple text frame step
 	case FrameMsg:
 		if len(m.frames) == 0 {
 			return m, nil
 		}
+
 		m.currentFrame = (m.currentFrame + 1) % len(m.frames)
 
-		// Schedule the loop tick for the subsequent frame
-		return m, tea.Tick(m.delays[m.currentFrame], func(t time.Time) tea.Msg {
+		// Adjust the duration (e.g., 125ms) to change the animation speed
+		return m, tea.Tick(125*time.Millisecond, func(t time.Time) tea.Msg {
 			return FrameMsg{}
 		})
 
