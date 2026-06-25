@@ -32,13 +32,15 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "s", "q", "escape":
-			// Handle normal quit behavior for AutoRepeat tasks here!
 			tasks, err := helpers.LoadTasks()
 			if err == nil {
 				for i, t := range tasks {
 					if t.ID == m.Task.ID {
+						// 👈 The window is closing, clear the opened flag
+						tasks[i].IsOpened = false
+
 						if t.AutoRepeat {
-							// Reschedule the next run from the MOMENT they close the current one
+							// Reschedule the next run from the MOMENT they close it
 							tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
 							tasks[i].IsActive = true
 						} else {
@@ -50,7 +52,6 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				_ = helpers.SaveTasks(tasks)
 			}
 			return m, tea.Quit
-
 		case "r":
 			// Your existing 'r' key logic for manual repetition overrides...
 			tasks, err := helpers.LoadTasks()

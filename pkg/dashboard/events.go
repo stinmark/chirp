@@ -61,13 +61,15 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 		time.Sleep(50 * time.Millisecond)
 		m.daemonRunning = helpers.IsDaemonRunning()
 	case "n":
-		m.state = createTask
-		m.inputIndex = 0
-		for i := range m.inputs {
-			m.inputs[i].Reset()
+		if len(m.taskList.Items()) < 50 {
+			m.state = createTask
+			m.inputIndex = 0
+			for i := range m.inputs {
+				m.inputs[i].Reset()
+			}
+			m.inputs[0].Focus()
+			m.errMessage = ""
 		}
-		m.inputs[0].Focus()
-		m.errMessage = ""
 	case "d":
 		if len(m.taskList.Items()) > 0 {
 			m.taskList.RemoveItem(m.taskList.Index())

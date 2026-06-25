@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,6 +13,14 @@ import (
 // ==========================================
 // Core Domain Structural Types
 // ==========================================
+//
+
+type TaskStorage struct {
+	Version int         `json:"version"`
+	Tasks   []BreakTask `json:"tasks"`
+}
+
+const CurrentSchemaVersion = 1
 
 type BreakTask struct {
 	ID          string    `json:"id"`
@@ -21,6 +30,7 @@ type BreakTask struct {
 	AutoRepeat  bool      `json:"auto_repeat"`
 	IsActive    bool      `json:"is_active"`
 	NextRun     time.Time `json:"next_run"`
+	IsOpened    bool      `json:"is_opened"` // 👈 Add this tracking flag
 }
 
 // FilterValue satisfies the charm.land/bubbles/list.Item interface
@@ -54,14 +64,45 @@ func LoadTasks() ([]BreakTask, error) {
 	if err != nil {
 		return nil, err
 	}
-	var tasks []BreakTask
-	err = json.Unmarshal(data, &tasks)
-	return tasks, err
+
+	// 1. Try to unmarshal into the new versioned wrapper structure
+	var storage TaskStorage
+	err = json.Unmarshal(data, &storage)
+
+	// 2. Fallback check: If it failed, or if Version is 0, it means it's an old legacy format file!
+	if err != nil || storage.Version == 0 {
+		// Try parsing it as the old legacy format raw array []BreakTask
+		var legacyTasks []BreakTask
+		if legacyErr := json.Unmarshal(data, &legacyTasks); legacyErr == nil {
+			log.Println("🔄 Old tasks.json format detected. Migrating schema to Version 1...")
+
+			// Fill in any new default values for features here if needed:
+			/*for i := range legacyTasks {
+				// Example: legacyTasks[i].IsOpened = false
+			}*/
+
+			// Save it right back to disk in the brand new versioned format automatically
+			_ = SaveTasks(legacyTasks)
+			return legacyTasks, nil
+		}
+
+		// If it's completely corrupted, return an empty array instead of crashing
+		return []BreakTask{}, nil
+	}
+
+	return storage.Tasks, nil
 }
 
 func SaveTasks(tasks []BreakTask) error {
 	path := getTasksFilePath()
-	data, err := json.MarshalIndent(tasks, "", "  ")
+
+	// Always wrap tasks with the current version when saving
+	storage := TaskStorage{
+		Version: CurrentSchemaVersion,
+		Tasks:   tasks,
+	}
+
+	data, err := json.MarshalIndent(storage, "", "  ")
 	if err != nil {
 		return err
 	}
