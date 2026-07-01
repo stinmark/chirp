@@ -1,4 +1,4 @@
-module github.com/austinemk/sigcat
+module github.com/stinmark/chirp
 
 go 1.26.3
 

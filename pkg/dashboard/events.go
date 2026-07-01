@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/austinemk/sigcat/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/helpers"
 )
 
 // handleGlobalKeys intercepts keys that apply regardless of what screen the user is viewing.
@@ -16,12 +16,12 @@ func (m dashboardModel) handleGlobalKeys(msg tea.KeyPressMsg) (dashboardModel, b
 		return m, true, tea.Quit
 	case "q":
 		// Only quit on 'q' if we are not actively filling a form or typing a search filter
-		if m.state == viewTasks && !m.taskList.SettingFilter() {
+		if m.state == viewChirps && !m.chirpList.SettingFilter() {
 			return m, true, tea.Quit
 		}
 	case "escape":
-		if m.state == createTask {
-			m.state = viewTasks // Safely abandon form input
+		if m.state == createChirp {
+			m.state = viewChirps // Safely abandon form input
 			return m, true, nil
 		}
 	}
@@ -33,25 +33,12 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 	var cmd tea.Cmd
 
 	// If bubbles list is in filtering mode, pass key events straight through to the list directly
-	if m.taskList.SettingFilter() {
-		m.taskList, cmd = m.taskList.Update(msg)
+	if m.chirpList.SettingFilter() {
+		m.chirpList, cmd = m.chirpList.Update(msg)
 		return m, cmd
 	}
 
 	switch msg.String() {
-	case "space":
-		if len(m.taskList.Items()) > 0 {
-			idx := m.taskList.Index()
-			if task, ok := m.taskList.SelectedItem().(helpers.BreakTask); ok {
-				task.IsActive = !task.IsActive
-				if task.IsActive {
-					task.NextRun = time.Now().Add(time.Duration(task.DurationMin) * time.Minute)
-					helpers.StartDaemon()
-				}
-				m.taskList.SetItem(idx, task)
-				_ = helpers.SaveTasks(m.getTasks())
-			}
-		}
 	case "s":
 		if m.daemonRunning {
 			helpers.StopDaemon()
@@ -61,8 +48,8 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 		time.Sleep(50 * time.Millisecond)
 		m.daemonRunning = helpers.IsDaemonRunning()
 	case "n":
-		if len(m.taskList.Items()) < 50 {
-			m.state = createTask
+		if len(m.chirpList.Items()) < 50 {
+			m.state = createChirp
 			m.inputIndex = 0
 			for i := range m.inputs {
 				m.inputs[i].Reset()
@@ -70,14 +57,38 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 			m.inputs[0].Focus()
 			m.errMessage = ""
 		}
+
+	case "o": // 👈 New keybind specifically to toggle startup behavior
+		enabled, _ := helpers.ToggleAutostart()
+		m.autostartEnabled = enabled
+
+	case "space":
+		if len(m.chirpList.Items()) > 0 {
+			idx := m.chirpList.Index()
+			if chirp, ok := m.chirpList.SelectedItem().(helpers.ChirpModel); ok {
+				chirp.IsActive = !chirp.IsActive
+				if chirp.IsActive {
+					chirp.NextRun = time.Now().Add(time.Duration(chirp.DurationMin) * time.Minute)
+					helpers.StartDaemon()
+				}
+				m.chirpList.SetItem(idx, chirp)
+				_ = helpers.SaveChirps(m.getChirps())
+
+				// Ensure OS handles deletion/addition based on explicit configuration status
+				_ = helpers.SyncAutostartWithOS(m.autostartEnabled, m.getChirps())
+			}
+		}
+
 	case "d":
-		if len(m.taskList.Items()) > 0 {
-			m.taskList.RemoveItem(m.taskList.Index())
-			_ = helpers.SaveTasks(m.getTasks())
+		if len(m.chirpList.Items()) > 0 {
+			m.chirpList.RemoveItem(m.chirpList.Index())
+			_ = helpers.SaveChirps(m.getChirps())
+			// Re-verify if last active task was cleared out
+			_ = helpers.SyncAutostartWithOS(m.autostartEnabled, m.getChirps())
 		}
 	default:
 		// Forward arrow keys / standard list keys to the bubble list engine natively
-		m.taskList, cmd = m.taskList.Update(msg)
+		m.chirpList, cmd = m.chirpList.Update(msg)
 		return m, cmd
 	}
 
@@ -128,7 +139,7 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 	repeatVal := strings.ToLower(strings.TrimSpace(m.inputs[3].Value()))
 	isRepeat := repeatVal == "y" || repeatVal == "yes" || repeatVal == ""
 
-	newTask := helpers.BreakTask{
+	newTask := helpers.ChirpModel{
 		ID:          helpers.GenerateShortID(),
 		Title:       m.inputs[0].Value(),
 		Message:     m.inputs[1].Value(),
@@ -138,10 +149,10 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 		NextRun:     time.Now().Add(time.Duration(mins) * time.Minute),
 	}
 
-	m.taskList.InsertItem(len(m.taskList.Items()), newTask)
-	_ = helpers.SaveTasks(m.getTasks())
+	m.chirpList.InsertItem(len(m.chirpList.Items()), newTask)
+	_ = helpers.SaveChirps(m.getChirps())
 	helpers.StartDaemon()
 
-	m.state = viewTasks
+	m.state = viewChirps
 	return m, nil
 }

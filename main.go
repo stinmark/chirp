@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/austinemk/sigcat/pkg/app"
+	"github.com/stinmark/chirp/pkg/app"
 )
 
 func main() {

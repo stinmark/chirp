@@ -1,17 +1,18 @@
+// Package dashboard for apps entry
 package dashboard
 
 import (
 	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
-	"github.com/austinemk/sigcat/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/helpers"
 )
 
 type sessionState int
 
 const (
-	viewTasks sessionState = iota
-	createTask
+	viewChirps sessionState = iota
+	createChirp
 )
 
 // ==========================================
@@ -19,43 +20,44 @@ const (
 // ==========================================
 
 type dashboardModel struct {
-	state         sessionState
-	taskList      list.Model
-	inputIndex    int
-	inputs        []textinput.Model
-	errMessage    string
-	daemonRunning bool
+	state            sessionState
+	chirpList        list.Model
+	inputIndex       int
+	inputs           []textinput.Model
+	errMessage       string
+	daemonRunning    bool
+	autostartEnabled bool
 }
 
 // ==========================================
 // Localized Task List Delegate
 // ==========================================
 
-type taskDelegate struct{}
+type chirpDelegate struct{}
 
-func (d taskDelegate) Height() int                               { return 2 }
-func (d taskDelegate) Spacing() int                              { return 1 }
-func (d taskDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d chirpDelegate) Height() int                               { return 2 }
+func (d chirpDelegate) Spacing() int                              { return 1 }
+func (d chirpDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 
 // ==========================================
 // Initialization Loop & Update Loop Router
 // ==========================================
 
 func InitialDashboardModel() dashboardModel {
-	t, _ := helpers.LoadTasks()
+	t, _ := helpers.LoadChirps()
 
 	listItems := make([]list.Item, len(t))
-	for i, task := range t {
-		listItems[i] = task
+	for i, chirp := range t {
+		listItems[i] = chirp
 	}
 
-	taskGrid := list.New(listItems, taskDelegate{}, 0, 0)
-	taskGrid.SetShowTitle(false)
-	taskGrid.SetShowStatusBar(false)
-	taskGrid.SetShowHelp(false)
+	chirpGrid := list.New(listItems, chirpDelegate{}, 0, 0)
+	chirpGrid.SetShowTitle(false)
+	chirpGrid.SetShowStatusBar(false)
+	chirpGrid.SetShowHelp(false)
 
 	// Fixes the layout to show exactly 5 items (5 items * 2 lines + 4 gaps * 1 line)
-	taskGrid.SetSize(80, 14)
+	chirpGrid.SetSize(80, 14)
 
 	inputs := make([]textinput.Model, 4)
 	inputs[0] = textinput.New()
@@ -76,10 +78,11 @@ func InitialDashboardModel() dashboardModel {
 	inputs[3].Prompt = ""
 
 	return dashboardModel{
-		state:         viewTasks,
-		taskList:      taskGrid,
-		inputs:        inputs,
-		daemonRunning: helpers.IsDaemonRunning(),
+		state:            viewChirps,
+		chirpList:        chirpGrid,
+		inputs:           inputs,
+		daemonRunning:    helpers.IsDaemonRunning(),
+		autostartEnabled: helpers.IsAutostartEnabled(),
 	}
 }
 
@@ -87,13 +90,13 @@ func (m dashboardModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m dashboardModel) getTasks() []helpers.BreakTask {
-	items := m.taskList.Items()
-	tasks := make([]helpers.BreakTask, len(items))
+func (m dashboardModel) getChirps() []helpers.ChirpModel {
+	items := m.chirpList.Items()
+	chirps := make([]helpers.ChirpModel, len(items))
 	for i, item := range items {
-		tasks[i] = item.(helpers.BreakTask)
+		chirps[i] = item.(helpers.ChirpModel)
 	}
-	return tasks
+	return chirps
 }
 
 func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -106,14 +109,14 @@ func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return updatedModel, globalCmd
 		}
 
-		if m.state == viewTasks {
+		if m.state == viewChirps {
 			return m.handleViewTasksKeys(msg)
-		} else if m.state == createTask {
+		} else if m.state == createChirp {
 			return m.handleCreateTaskKeys(msg)
 		}
 	}
 
-	if m.state == createTask {
+	if m.state == createChirp {
 		m.inputs[m.inputIndex], cmd = m.inputs[m.inputIndex].Update(msg)
 		return m, cmd
 	}

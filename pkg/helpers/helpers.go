@@ -17,7 +17,7 @@ func FindTerminal() string {
 }
 
 func IsDaemonRunning() bool {
-	cmd := exec.Command("pgrep", "-f", "sigcat --run-daemon")
+	cmd := exec.Command("pgrep", "-f", "chirp --run-daemon")
 	return cmd.Run() == nil
 }
 
@@ -34,7 +34,7 @@ func StartDaemon() {
 }
 
 func StopDaemon() {
-	cmd := exec.Command("pkill", "-f", "sigcat --run-daemon")
+	cmd := exec.Command("pkill", "-f", "chirp --run-daemon")
 	_ = cmd.Run()
 }
 

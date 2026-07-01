@@ -4,7 +4,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/austinemk/sigcat/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/helpers"
 )
 
 func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -27,43 +27,34 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Tick(125*time.Millisecond, func(t time.Time) tea.Msg {
 			return FrameMsg{}
 		})
-		// In events.go (inside the tea.KeyPressMsg switch statement)
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "s", "q", "escape":
-			tasks, err := helpers.LoadTasks()
+		case "r", "s", "q", "escape":
+			chirps, err := helpers.LoadChirps()
 			if err == nil {
-				for i, t := range tasks {
-					if t.ID == m.Task.ID {
+				for i, c := range chirps {
+					if c.ID == m.Chirp.ID {
 						// 👈 The window is closing, clear the opened flag
-						tasks[i].IsOpened = false
+						chirps[i].IsOpened = false
 
-						if t.AutoRepeat {
+						// If 'r' is pressed, flip the autocomplete/autorepeat setting first
+						if msg.String() == "r" {
+							chirps[i].AutoRepeat = !chirps[i].AutoRepeat
+						}
+
+						// Handle scheduling based on the (potentially flipped) AutoRepeat state
+						if chirps[i].AutoRepeat {
 							// Reschedule the next run from the MOMENT they close it
-							tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
-							tasks[i].IsActive = true
+							chirps[i].NextRun = time.Now().Add(time.Duration(chirps[i].DurationMin) * time.Minute)
+							chirps[i].IsActive = true
 						} else {
-							tasks[i].IsActive = false
+							chirps[i].IsActive = false
 						}
 						break
 					}
 				}
-				_ = helpers.SaveTasks(tasks)
-			}
-			return m, tea.Quit
-		case "r":
-			// Your existing 'r' key logic for manual repetition overrides...
-			tasks, err := helpers.LoadTasks()
-			if err == nil {
-				for i, t := range tasks {
-					if t.ID == m.Task.ID {
-						tasks[i].IsActive = true
-						tasks[i].NextRun = time.Now().Add(time.Duration(t.DurationMin) * time.Minute)
-						break
-					}
-				}
-				_ = helpers.SaveTasks(tasks)
+				_ = helpers.SaveChirps(chirps)
 			}
 			return m, tea.Quit
 		}

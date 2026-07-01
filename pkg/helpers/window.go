@@ -7,11 +7,11 @@ import (
 	"os/exec"
 )
 
-func SpawnFloatingWindow(terminalApp, executable, taskID string) error {
+func SpawnFloatingWindow(terminalApp, executable, chirpID string) error {
 	var cmd *exec.Cmd
-	const uniqueTitle = "sigcat-break-popup"
-	uiArg := "--ui=break"
-	idArg := fmt.Sprintf("--task-id=%s", taskID)
+	const uniqueTitle = "chirp-popup"
+	uiArg := "--ui=popup"
+	idArg := fmt.Sprintf("--chirp-id=%s", chirpID)
 
 	// 0. PREVENT CLUTTER: Force-kill any existing popup window matching our unique title
 	// We use pkill -f to find the exact terminal layout title signature.

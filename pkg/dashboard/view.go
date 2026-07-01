@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/austinemk/sigcat/pkg/helpers"
-	"github.com/austinemk/sigcat/pkg/theme"
+	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/theme"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
-func (d taskDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	t, ok := listItem.(helpers.BreakTask)
+func (d chirpDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	t, ok := listItem.(helpers.ChirpModel)
 	if !ok {
 		return
 	}
@@ -41,17 +41,23 @@ func (d taskDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 func (m dashboardModel) View() tea.View {
 	var segments []string
 
-	segments = append(segments, theme.GenerateTexturedShadowTitle("SIGCAT HUB", "1"))
-	segments = append(segments, lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("8")).Render("---"+helpers.Ternary(m.daemonRunning, "daemon running\n", "daemon stopped\n")))
+	segments = append(segments, theme.GenerateTexturedShadowTitle("CHIRP HUB", "1"))
+	// Display both Daemon execution status and Explicit Boot configuration status
+	statusLine := fmt.Sprintf(
+		"--- daemon: %s | launch on startup: %s\n",
+		helpers.Ternary(m.daemonRunning, "running", "stopped"),
+		helpers.Ternary(m.autostartEnabled, "ENABLED", "DISABLED"),
+	)
+	segments = append(segments, lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("8")).Render(statusLine))
 
-	if m.state == viewTasks {
-		if len(m.taskList.Items()) == 0 {
+	if m.state == viewChirps {
+		if len(m.chirpList.Items()) == 0 {
 			segments = append(segments, theme.HelpStyle.Render("  No active profiles found. Press [n] to create one.\n"))
 		} else {
-			segments = append(segments, m.taskList.View())
+			segments = append(segments, m.chirpList.View())
 		}
 
-		segments = append(segments, theme.HelpStyle.Render("[n] New Task • [space] Toggle • [s] Start/Stop Daemon • [d] Delete • [/] Filter • [q] Quit"))
+		segments = append(segments, theme.HelpStyle.Render("[n] New Chirp • [space] Toggle • [o] Toggle Startup • [s] Start/Stop Daemon • [d] Delete • [/] Filter • [q] Quit"))
 	} else {
 		segments = append(segments, theme.TitleStyle.Render("CREATE NEW SCHEDULER PROFILE \n"))
 

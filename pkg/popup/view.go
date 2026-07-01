@@ -1,44 +1,42 @@
 package popup
 
 import (
-	"github.com/austinemk/sigcat/pkg/helpers"
-	"github.com/austinemk/sigcat/pkg/theme"
+	_ "embed" // Required for embedding files
+
+	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/theme"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
-// In view.go, update your View() method:
+//go:embed bird.txt
+var birdArt string
 
 func (m PopupModel) View() tea.View {
-	// 1. Safely retrieve the active Braille string frame
-	activeArt := ""
-	if len(m.frames) > 0 {
-		activeArt = m.frames[m.currentFrame]
-	}
+	// 1. Fallback to embedded ASCII art if m.frames is empty
 
-	// 2. Render your layout elements (same as you had before)
-	artStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true).Render(activeArt)
-	bannerTitle := theme.GenerateTexturedShadowTitle(theme.TruncateString(m.Task.Title, 10, false), "#AEB6FC")
+	// 2. Render your layout elements
+	artStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true).Render(birdArt)
+	bannerTitle := theme.GenerateTexturedShadowTitle(theme.TruncateString(m.Chirp.Title, 10, false), "1")
 
-	var panel string
-	panel += theme.AccentStyle.Width(30).Render(m.Task.Message) + "\n\n"
-	panel += theme.MutedStyle.Render("status: "+helpers.Ternary(m.DaemonRunning, "● daemon active", "● daemon stopped")) + "\n"
+	var panel []string
+	panel = append(panel, theme.AccentStyle.Width(30).Render(m.Chirp.Message)+"\n")
+	panel = append(panel, theme.MutedStyle.Render("status: "+helpers.Ternary(m.DaemonRunning, "● daemon active", "● daemon stopped")))
 
-	if m.Task.AutoRepeat {
-		panel += theme.ActiveStye.Render("mode: AutoRepeat\n")
-		panel += theme.MutedStyle.Render("[r] stop repeat [s/q] quit")
+	if m.Chirp.AutoRepeat {
+		panel = append(panel, theme.ActiveStye.Render("mode: AutoRepeat"))
+		panel = append(panel, theme.MutedStyle.Render("[r] stop repeat [s/q] quit"))
 	} else {
-		panel += theme.ActiveStye.Render("mode: Run Once\n")
-		panel += theme.MutedStyle.Render("[r] repeat [s/q] quit")
+		panel = append(panel, theme.ActiveStye.Render("mode: Run Once"))
+		panel = append(panel, theme.MutedStyle.Render("[r] repeat [s/q] quit"))
 	}
 
 	// 3. Join layout elements together
-	uiLayout := lipgloss.JoinHorizontal(lipgloss.Bottom, panel, artStyled)
-	combinedView := lipgloss.JoinVertical(lipgloss.Center, bannerTitle, uiLayout)
+	uiLayout := lipgloss.JoinVertical(lipgloss.Bottom, bannerTitle, lipgloss.JoinVertical(lipgloss.Left, panel...))
+	combinedView := lipgloss.JoinHorizontal(lipgloss.Center, artStyled, uiLayout)
 
 	// 4. DYNAMICALLY CENTER THE CONTENT
-	// If we haven't received the dimensions yet, fallback to a clean string
 	var finalRender string
 	if m.TerminalWidth > 0 && m.TerminalHeight > 0 {
 		finalRender = lipgloss.Place(
@@ -49,7 +47,6 @@ func (m PopupModel) View() tea.View {
 			combinedView,
 		)
 	} else {
-		// Fallback padding just in case the initial size event is slightly delayed
 		finalRender = lipgloss.NewStyle().Padding(2, 4).Render(combinedView)
 	}
 

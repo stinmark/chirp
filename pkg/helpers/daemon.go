@@ -17,7 +17,7 @@ func tickCmd() tea.Cmd {
 }
 
 func RunDaemon() {
-	log.Println("🐱 sigcat background runtime scheduler listening...")
+	log.Println("🐱 chirp background runtime scheduler listening...")
 
 	terminalApp := FindTerminal()
 	executable, _ := os.Executable()
@@ -26,19 +26,19 @@ func RunDaemon() {
 	// -------------------------------------------------------------------------
 	// INITIALIZATION PASS: Reset overdue active tasks so they don't fire all at once
 	// -------------------------------------------------------------------------
-	if tasks, err := LoadTasks(); err == nil {
+	if chirps, err := LoadChirps(); err == nil {
 		changed := false
-		for i, task := range tasks {
+		for i, chirp := range chirps {
 			// If a task is active but its scheduled time has already passed while
 			// the daemon was stopped, push its next run forward from *now*.
-			if task.IsActive && now.After(task.NextRun) {
-				log.Printf("🔄 Resetting stale schedule for profile [%s] (%s) to avoid pile-up\n", task.ID, task.Title)
-				tasks[i].NextRun = now.Add(time.Duration(task.DurationMin) * time.Minute)
+			if chirp.IsActive && now.After(chirp.NextRun) {
+				log.Printf("🔄 Resetting stale schedule for profile [%s] (%s) to avoid pile-up\n", chirp.ID, chirp.Title)
+				chirps[i].NextRun = now.Add(time.Duration(chirp.DurationMin) * time.Minute)
 				changed = true
 			}
 		}
 		if changed {
-			_ = SaveTasks(tasks)
+			_ = SaveChirps(chirps)
 		}
 	}
 
@@ -47,7 +47,7 @@ func RunDaemon() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		tasks, err := LoadTasks()
+		chirps, err := LoadChirps()
 		if err != nil {
 			continue
 		}
@@ -56,31 +56,31 @@ func RunDaemon() {
 		now = time.Now()
 		activeCount := 0
 
-		for i, task := range tasks {
-			if !task.IsActive {
+		for i, chirp := range chirps {
+			if !chirp.IsActive {
 				continue
 			}
 
 			activeCount++ // Found an active profile! Keep it counted.
 
 			// 👈 If the window is already opened, do not fire it again or exit!
-			if task.IsOpened {
+			if chirp.IsOpened {
 				continue
 			}
 
-			if now.After(task.NextRun) {
-				log.Printf("⏰ Target hit for profile [%s]: %s\n", task.ID, task.Title)
+			if now.After(chirp.NextRun) {
+				log.Printf("⏰ Target hit for profile [%s]: %s\n", chirp.ID, chirp.Title)
 
 				// Set IsOpened to true so we don't spawn duplicate windows next tick
-				tasks[i].IsOpened = true
+				chirps[i].IsOpened = true
 				changed = true
 
-				_ = SpawnFloatingWindow(terminalApp, executable, task.ID)
+				_ = SpawnFloatingWindow(terminalApp, executable, chirp.ID)
 			}
 		}
 
 		if changed {
-			_ = SaveTasks(tasks)
+			_ = SaveChirps(chirps)
 		}
 
 		// Self-termination safety logic is now 100% safe.

@@ -1,5 +1,4 @@
 // Package app is the package entry
-
 package app
 
 import (
@@ -9,22 +8,22 @@ import (
 	"os/exec"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/austinemk/sigcat/pkg/dashboard"
-	"github.com/austinemk/sigcat/pkg/helpers"
-	"github.com/austinemk/sigcat/pkg/popup"
+	"github.com/stinmark/chirp/pkg/dashboard"
+	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/popup"
 )
 
 func Execute() {
-	runFlag := flag.Bool("run-daemon", false, "Start the sigcat engine context")
+	runFlag := flag.Bool("run-daemon", false, "Start the chirp engine context")
 	stopFlag := flag.Bool("stop-daemon", false, "Stop the active background engine")
 	uiMode := flag.String("ui", "", "Launch UI ('dashboard' or 'popup')")
-	taskID := flag.String("task-id", "", "Target task reference for the popup renderer")
+	chirpID := flag.String("chirp-id", "", "Target task reference for the popup renderer")
 	flag.Parse()
 
 	if *stopFlag {
-		cmd := exec.Command("pkill", "-f", "sigcat --run-daemon")
+		cmd := exec.Command("pkill", "-f", "chirp --run-daemon")
 		if err := cmd.Run(); err != nil {
-			fmt.Println("❌ No running sigcat daemon found.")
+			fmt.Println("❌ No running chirp daemon found.")
 			return
 		}
 		fmt.Println("🛑 Sigcat daemon stopped successfully.")
@@ -32,12 +31,12 @@ func Execute() {
 	}
 
 	if *runFlag {
-		if os.Getenv("SIGCAT_BACKGROUND") != "true" {
+		if os.Getenv("CHIRP_BACKGROUND") != "true" {
 			executable, _ := os.Executable()
 			cmd := exec.Command(executable, "--run-daemon")
-			cmd.Env = append(os.Environ(), "SIGCAT_BACKGROUND=true")
+			cmd.Env = append(os.Environ(), "CHIRP_BACKGROUND=true")
 
-			logFile, _ := os.OpenFile(os.Getenv("HOME")+"/.config/sigcat/daemon.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+			logFile, _ := os.OpenFile(os.Getenv("HOME")+"/.config/chirp/daemon.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 
@@ -45,7 +44,7 @@ func Execute() {
 				fmt.Printf("❌ Failed to split engine thread: %v\n", err)
 				return
 			}
-			fmt.Println("🚀 Sigcat tracking platform engaged in background!")
+			fmt.Println("🚀 Chirp tracking platform engaged in background!")
 			return
 		}
 		helpers.RunDaemon()
@@ -61,13 +60,13 @@ func Execute() {
 		return
 	}
 
-	if *uiMode == "popup" || *uiMode == "break" { // Backward compatible fallback support included
-		p := tea.NewProgram(popup.InitialPopupModel(*taskID))
+	if *uiMode == "popup" { // Backward compatible fallback support included
+		p := tea.NewProgram(popup.InitialPopupModel(*chirpID))
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Popup display engine failure: %v\n", err)
 		}
 		return
 	}
 
-	fmt.Println("Usage:\n  ./sigcat                  (Launches Config Dashboard)\n  ./sigcat --run-daemon     (Starts background engine)\n  ./sigcat --stop-daemon    (Stops background engine)")
+	fmt.Println("Usage:\n  ./chirp                  (Launches Config Dashboard)\n  ./chirp --run-daemon     (Starts background engine)\n  ./chirp --stop-daemon    (Stops background engine)")
 }

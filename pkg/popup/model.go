@@ -6,18 +6,18 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/austinemk/sigcat/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/helpers"
 )
 
 // 1. Tell Go to embed the entire assets directory automatically
 //
-//go:embed cats/*.txt
+//go:embed birds/*.txt
 var assetFiles embed.FS
 
 type FrameMsg struct{}
 
 type PopupModel struct {
-	Task           helpers.BreakTask
+	Chirp          helpers.ChirpModel
 	DaemonRunning  bool
 	frames         []string
 	currentFrame   int
@@ -26,18 +26,18 @@ type PopupModel struct {
 }
 
 func InitialPopupModel(id string) PopupModel {
-	tasks, _ := helpers.LoadTasks()
-	var targeted helpers.BreakTask
+	chirps, _ := helpers.LoadChirps()
+	var targeted helpers.ChirpModel
 
-	for _, t := range tasks {
-		if t.ID == id {
-			targeted = t
+	for _, c := range chirps {
+		if c.ID == id {
+			targeted = c
 			break
 		}
 	}
 
 	if targeted.ID == "" {
-		targeted = helpers.BreakTask{Title: "Take a Break!", Message: "Time to stretch."}
+		targeted = helpers.ChirpModel{Title: "Take a Break!", Message: "Time to stretch."}
 	}
 
 	var loadedFrames []string
@@ -45,7 +45,7 @@ func InitialPopupModel(id string) PopupModel {
 	// 2. Cycle through your exported text files and read them into memory
 	// Adjust the loop count to match your total number of frames (e.g., 9 frames)
 	for i := 0; i < 6; i++ {
-		filename := fmt.Sprintf("cats/frame_%d.txt", i)
+		filename := fmt.Sprintf("birds/frame_%d.txt", i)
 		data, err := assetFiles.ReadFile(filename)
 		if err == nil {
 			loadedFrames = append(loadedFrames, string(data))
@@ -53,7 +53,7 @@ func InitialPopupModel(id string) PopupModel {
 	}
 
 	return PopupModel{
-		Task:          targeted,
+		Chirp:         targeted,
 		DaemonRunning: helpers.IsDaemonRunning(),
 		frames:        loadedFrames,
 		currentFrame:  0,
