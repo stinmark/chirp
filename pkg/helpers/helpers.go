@@ -2,7 +2,6 @@
 package helpers
 
 import (
-	"os"
 	"os/exec"
 )
 
@@ -16,7 +15,7 @@ func FindTerminal() string {
 	return "xterm"
 }
 
-func IsDaemonRunning() bool {
+/*func IsDaemonRunning() bool {
 	cmd := exec.Command("pgrep", "-f", "chirp --run-daemon")
 	return cmd.Run() == nil
 }
@@ -36,7 +35,7 @@ func StartDaemon() {
 func StopDaemon() {
 	cmd := exec.Command("pkill", "-f", "chirp --run-daemon")
 	_ = cmd.Run()
-}
+}*/
 
 func Ternary(cond bool, trueVal, falseVal string) string {
 	if cond {

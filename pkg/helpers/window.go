@@ -1,13 +1,6 @@
 package helpers
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-)
-
-func SpawnFloatingWindow(terminalApp, executable, chirpID string) error {
+/*func SpawnFloatingWindow(terminalApp, executable, chirpID string) error {
 	var cmd *exec.Cmd
 	const uniqueTitle = "chirp-popup"
 	uiArg := "--ui=popup"
@@ -72,4 +65,4 @@ func injectRuntimeHyprlandRules(className string) {
 		}
 	}
 	log.Println("🎨 Centered Hyprland windowrulev2 overlay rules successfully injected via IPC.")
-}
+}*/

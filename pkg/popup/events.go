@@ -15,19 +15,6 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.TerminalHeight = msg.Height
 		return m, nil
 
-	// Handle the simple text frame step
-	case FrameMsg:
-		if len(m.frames) == 0 {
-			return m, nil
-		}
-
-		m.currentFrame = (m.currentFrame + 1) % len(m.frames)
-
-		// Adjust the duration (e.g., 125ms) to change the animation speed
-		return m, tea.Tick(125*time.Millisecond, func(t time.Time) tea.Msg {
-			return FrameMsg{}
-		})
-
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "r", "s", "q", "escape":

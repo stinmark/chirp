@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stinmark/chirp/pkg/dashboard"
@@ -20,53 +21,70 @@ func Execute() {
 	chirpID := flag.String("chirp-id", "", "Target task reference for the popup renderer")
 	flag.Parse()
 
+	// 1. DAEMON STOP HANDLER
 	if *stopFlag {
-		cmd := exec.Command("pkill", "-f", "chirp --run-daemon")
-		if err := cmd.Run(); err != nil {
+		if err := helpers.KillDaemon(); err != nil {
 			fmt.Println("❌ No running chirp daemon found.")
 			return
 		}
-		fmt.Println("🛑 Sigcat daemon stopped successfully.")
+		fmt.Println("🛑 Chirp daemon stopped successfully.")
 		return
 	}
 
+	// 2. DAEMON START HANDLER
 	if *runFlag {
 		if os.Getenv("CHIRP_BACKGROUND") != "true" {
 			executable, _ := os.Executable()
 			cmd := exec.Command(executable, "--run-daemon")
 			cmd.Env = append(os.Environ(), "CHIRP_BACKGROUND=true")
 
-			logFile, _ := os.OpenFile(os.Getenv("HOME")+"/.config/chirp/daemon.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-			cmd.Stdout = logFile
-			cmd.Stderr = logFile
+			helpers.ConfigureBackgroundCmd(cmd)
+
+			configDir, err := os.UserConfigDir()
+			if err != nil {
+				configDir = "."
+			}
+			logDir := filepath.Join(configDir, "chirp")
+			_ = os.MkdirAll(logDir, 0o755)
+
+			// Write log output files
+			logFile, err := os.OpenFile(filepath.Join(logDir, "daemon.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+			if err == nil {
+				cmd.Stdout = logFile
+				cmd.Stderr = logFile
+				defer logFile.Close()
+			}
 
 			if err := cmd.Start(); err != nil {
 				fmt.Printf("❌ Failed to split engine thread: %v\n", err)
 				return
 			}
+
+			// =====================================================================
+			// NEW CODE: Record the specific background process PID to a lockfile
+			// =====================================================================
+			pidFile := filepath.Join(logDir, "daemon.pid")
+			_ = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
+			// =====================================================================
+
 			fmt.Println("🚀 Chirp tracking platform engaged in background!")
 			return
 		}
 		helpers.RunDaemon()
 		return
 	}
-
-	// Route user interface environments
-	if *uiMode == "dashboard" || (*uiMode == "" && len(os.Args) == 1) {
-		p := tea.NewProgram(dashboard.InitialDashboardModel())
-		if _, err := p.Run(); err != nil {
-			fmt.Printf("Dashboard crash: %v\n", err)
-		}
-		return
-	}
-
-	if *uiMode == "popup" { // Backward compatible fallback support included
+	// 3. POPUP UI ROUTER (Checked before Dashboard to prevent fallback loops)
+	if *uiMode == "popup" && *chirpID != "" {
 		p := tea.NewProgram(popup.InitialPopupModel(*chirpID))
 		if _, err := p.Run(); err != nil {
-			fmt.Printf("Popup display engine failure: %v\n", err)
+			fmt.Printf("Popup interface crash: %v\n", err)
 		}
 		return
 	}
 
-	fmt.Println("Usage:\n  ./chirp                  (Launches Config Dashboard)\n  ./chirp --run-daemon     (Starts background engine)\n  ./chirp --stop-daemon    (Stops background engine)")
+	// 4. INTERACTIVE DASHBOARD DEFAULT FALLBACK
+	p := tea.NewProgram(dashboard.InitialDashboardModel())
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("Dashboard crash: %v\n", err)
+	}
 }
