@@ -5,6 +5,7 @@ import (
 	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"github.com/stinmark/chirp/pkg/daemon"
 	"github.com/stinmark/chirp/pkg/helpers"
 )
 
@@ -81,7 +82,7 @@ func InitialDashboardModel() dashboardModel {
 		state:            viewChirps,
 		chirpList:        chirpGrid,
 		inputs:           inputs,
-		daemonRunning:    helpers.IsDaemonRunning(),
+		daemonRunning:    daemon.IsDaemonRunning(),
 		autostartEnabled: helpers.IsAutostartEnabled(),
 	}
 }
@@ -100,7 +101,7 @@ func (m dashboardModel) getChirps() []helpers.ChirpModel {
 }
 
 func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	m.daemonRunning = helpers.IsDaemonRunning()
+	m.daemonRunning = daemon.IsDaemonRunning()
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {

@@ -2,6 +2,7 @@ package popup
 
 import (
 	tea "charm.land/bubbletea/v2"
+	"github.com/stinmark/chirp/pkg/daemon"
 	"github.com/stinmark/chirp/pkg/helpers"
 )
 
@@ -34,7 +35,7 @@ func InitialPopupModel(id string) PopupModel {
 
 	return PopupModel{
 		Chirp:         targeted,
-		DaemonRunning: helpers.IsDaemonRunning(),
+		DaemonRunning: daemon.IsDaemonRunning(),
 		currentFrame:  0,
 	}
 }

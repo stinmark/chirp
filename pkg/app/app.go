@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/stinmark/chirp/pkg/daemon"
 	"github.com/stinmark/chirp/pkg/dashboard"
-	"github.com/stinmark/chirp/pkg/helpers"
 	"github.com/stinmark/chirp/pkg/popup"
 )
 
@@ -23,7 +23,7 @@ func Execute() {
 
 	// 1. DAEMON STOP HANDLER
 	if *stopFlag {
-		if err := helpers.KillDaemon(); err != nil {
+		if err := daemon.KillDaemon(); err != nil {
 			fmt.Println("❌ No running chirp daemon found.")
 			return
 		}
@@ -38,7 +38,7 @@ func Execute() {
 			cmd := exec.Command(executable, "--run-daemon")
 			cmd.Env = append(os.Environ(), "CHIRP_BACKGROUND=true")
 
-			helpers.ConfigureBackgroundCmd(cmd)
+			daemon.ConfigureBackgroundCmd(cmd)
 
 			configDir, err := os.UserConfigDir()
 			if err != nil {
@@ -59,10 +59,6 @@ func Execute() {
 				fmt.Printf("❌ Failed to split engine thread: %v\n", err)
 				return
 			}
-
-			// =====================================================================
-			// NEW CODE: Record the specific background process PID to a lockfile
-			// =====================================================================
 			pidFile := filepath.Join(logDir, "daemon.pid")
 			_ = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
 			// =====================================================================
@@ -70,7 +66,7 @@ func Execute() {
 			fmt.Println("🚀 Chirp tracking platform engaged in background!")
 			return
 		}
-		helpers.RunDaemon()
+		daemon.RunDaemon()
 		return
 	}
 	// 3. POPUP UI ROUTER (Checked before Dashboard to prevent fallback loops)

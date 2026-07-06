@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/stinmark/chirp/pkg/daemon"
 	"github.com/stinmark/chirp/pkg/helpers"
 )
 
@@ -41,12 +42,12 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 	switch msg.String() {
 	case "s":
 		if m.daemonRunning {
-			helpers.StopDaemon()
+			daemon.StopDaemon()
 		} else {
-			helpers.StartDaemon()
+			daemon.StartDaemon()
 		}
 		time.Sleep(50 * time.Millisecond)
-		m.daemonRunning = helpers.IsDaemonRunning()
+		m.daemonRunning = daemon.IsDaemonRunning()
 	case "n":
 		if len(m.chirpList.Items()) < 50 {
 			m.state = createChirp
@@ -69,7 +70,9 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 				chirp.IsActive = !chirp.IsActive
 				if chirp.IsActive {
 					chirp.NextRun = time.Now().Add(time.Duration(chirp.DurationMin) * time.Minute)
-					helpers.StartDaemon()
+					if !m.daemonRunning {
+						daemon.StartDaemon()
+					}
 				}
 				m.chirpList.SetItem(idx, chirp)
 				_ = helpers.SaveChirps(m.getChirps())
@@ -151,7 +154,7 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 
 	m.chirpList.InsertItem(len(m.chirpList.Items()), newTask)
 	_ = helpers.SaveChirps(m.getChirps())
-	helpers.StartDaemon()
+	daemon.StartDaemon()
 
 	m.state = viewChirps
 	return m, nil
