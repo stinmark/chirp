@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stinmark/chirp/pkg/daemon"
+	"github.com/stinmark/chirp/pkg/data"
 	"github.com/stinmark/chirp/pkg/helpers"
 )
 
@@ -66,7 +67,7 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 	case "space":
 		if len(m.chirpList.Items()) > 0 {
 			idx := m.chirpList.Index()
-			if chirp, ok := m.chirpList.SelectedItem().(helpers.ChirpModel); ok {
+			if chirp, ok := m.chirpList.SelectedItem().(data.ChirpModel); ok {
 				chirp.IsActive = !chirp.IsActive
 				if chirp.IsActive {
 					chirp.NextRun = time.Now().Add(time.Duration(chirp.DurationMin) * time.Minute)
@@ -75,7 +76,7 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 					}
 				}
 				m.chirpList.SetItem(idx, chirp)
-				_ = helpers.SaveChirps(m.getChirps())
+				_ = data.SaveChirps(m.getChirps())
 
 				// Ensure OS handles deletion/addition based on explicit configuration status
 				_ = helpers.SyncAutostartWithOS(m.autostartEnabled, m.getChirps())
@@ -85,7 +86,7 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 	case "d":
 		if len(m.chirpList.Items()) > 0 {
 			m.chirpList.RemoveItem(m.chirpList.Index())
-			_ = helpers.SaveChirps(m.getChirps())
+			_ = data.SaveChirps(m.getChirps())
 			// Re-verify if last active task was cleared out
 			_ = helpers.SyncAutostartWithOS(m.autostartEnabled, m.getChirps())
 		}
@@ -142,8 +143,8 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 	repeatVal := strings.ToLower(strings.TrimSpace(m.inputs[3].Value()))
 	isRepeat := repeatVal == "y" || repeatVal == "yes" || repeatVal == ""
 
-	newTask := helpers.ChirpModel{
-		ID:          helpers.GenerateShortID(),
+	newTask := data.ChirpModel{
+		ID:          data.GenerateShortID(),
 		Title:       m.inputs[0].Value(),
 		Message:     m.inputs[1].Value(),
 		DurationMin: mins,
@@ -153,7 +154,7 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 	}
 
 	m.chirpList.InsertItem(len(m.chirpList.Items()), newTask)
-	_ = helpers.SaveChirps(m.getChirps())
+	_ = data.SaveChirps(m.getChirps())
 	daemon.StartDaemon()
 
 	m.state = viewChirps

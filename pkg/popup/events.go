@@ -4,7 +4,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/data"
 )
 
 func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -18,7 +18,7 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "r", "s", "q", "escape":
-			chirps, err := helpers.LoadChirps()
+			chirps, err := data.LoadChirps()
 			if err == nil {
 				for i, c := range chirps {
 					if c.ID == m.Chirp.ID {
@@ -41,7 +41,7 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
-				_ = helpers.SaveChirps(chirps)
+				_ = data.SaveChirps(chirps)
 			}
 			return m, tea.Quit
 		}

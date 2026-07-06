@@ -6,6 +6,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"github.com/stinmark/chirp/pkg/daemon"
+	"github.com/stinmark/chirp/pkg/data"
 	"github.com/stinmark/chirp/pkg/helpers"
 )
 
@@ -45,7 +46,7 @@ func (d chirpDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 // ==========================================
 
 func InitialDashboardModel() dashboardModel {
-	t, _ := helpers.LoadChirps()
+	t, _ := data.LoadChirps()
 
 	listItems := make([]list.Item, len(t))
 	for i, chirp := range t {
@@ -91,11 +92,11 @@ func (m dashboardModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m dashboardModel) getChirps() []helpers.ChirpModel {
+func (m dashboardModel) getChirps() []data.ChirpModel {
 	items := m.chirpList.Items()
-	chirps := make([]helpers.ChirpModel, len(items))
+	chirps := make([]data.ChirpModel, len(items))
 	for i, item := range items {
-		chirps[i] = item.(helpers.ChirpModel)
+		chirps[i] = item.(data.ChirpModel)
 	}
 	return chirps
 }

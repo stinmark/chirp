@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/stinmark/chirp/pkg/data"
 )
 
 // ToggleAutostart explicitly flips the configuration flag and syncs it with the OS
 func ToggleAutostart() (bool, error) {
-	path := getChirpsFilePath()
+	path := data.GetChirpsFilePath()
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false, nil
 	}
@@ -18,7 +20,7 @@ func ToggleAutostart() (bool, error) {
 		return false, err
 	}
 
-	var storage ChirpStorage
+	var storage data.ChirpStorage
 	if err := json.Unmarshal(data, &storage); err != nil {
 		return false, err
 	}
@@ -42,18 +44,18 @@ func ToggleAutostart() (bool, error) {
 
 // IsAutostartEnabled reads the saved configuration preference
 func IsAutostartEnabled() bool {
-	path := getChirpsFilePath()
+	path := data.GetChirpsFilePath()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false
 	}
-	var storage ChirpStorage
+	var storage data.ChirpStorage
 	_ = json.Unmarshal(data, &storage)
 	return storage.RunOnStartup
 }
 
 // SyncAutostartWithOS creates or removes the desktop entry strictly on parameters
-func SyncAutostartWithOS(enabled bool, chirps []ChirpModel) error {
+func SyncAutostartWithOS(enabled bool, chirps []data.ChirpModel) error {
 	home, _ := os.UserHomeDir()
 	desktopFilePath := filepath.Join(home, ".config", "autostart", "chirp.desktop")
 

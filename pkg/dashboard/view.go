@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/stinmark/chirp/pkg/data"
 	"github.com/stinmark/chirp/pkg/helpers"
 	"github.com/stinmark/chirp/pkg/theme"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func (d chirpDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	t, ok := listItem.(helpers.ChirpModel)
+	t, ok := listItem.(data.ChirpModel)
 	if !ok {
 		return
 	}

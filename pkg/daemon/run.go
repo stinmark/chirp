@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/stinmark/chirp/pkg/data"
 	"github.com/stinmark/chirp/pkg/helpers"
 	"github.com/stinmark/chirp/pkg/window"
 )
@@ -19,7 +20,7 @@ func RunDaemon() {
 	// -------------------------------------------------------------------------
 	// INITIALIZATION PASS: Reset overdue active tasks so they don't fire all at once
 	// -------------------------------------------------------------------------
-	if chirps, err := helpers.LoadChirps(); err == nil {
+	if chirps, err := data.LoadChirps(); err == nil {
 		changed := false
 		for i, chirp := range chirps {
 			// If a task is active but its scheduled time has already passed while
@@ -31,7 +32,7 @@ func RunDaemon() {
 			}
 		}
 		if changed {
-			_ = helpers.SaveChirps(chirps)
+			_ = data.SaveChirps(chirps)
 		}
 	}
 
@@ -40,7 +41,7 @@ func RunDaemon() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		chirps, err := helpers.LoadChirps()
+		chirps, err := data.LoadChirps()
 		if err != nil {
 			continue
 		}
@@ -72,7 +73,7 @@ func RunDaemon() {
 		}
 
 		if changed {
-			_ = helpers.SaveChirps(chirps)
+			_ = data.SaveChirps(chirps)
 		}
 
 		// Self-termination safety logic is now 100% safe.
