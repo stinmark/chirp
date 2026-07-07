@@ -12,6 +12,7 @@ import (
 	"github.com/stinmark/chirp/pkg/daemon"
 	"github.com/stinmark/chirp/pkg/dashboard"
 	"github.com/stinmark/chirp/pkg/popup"
+	"github.com/stinmark/chirp/pkg/window"
 )
 
 func Execute() {
@@ -69,8 +70,13 @@ func Execute() {
 		daemon.RunDaemon()
 		return
 	}
+
 	// 3. POPUP UI ROUTER (Checked before Dashboard to prevent fallback loops)
 	if *uiMode == "popup" && *chirpID != "" {
+		// 1. Center the terminal and force focus right here
+		window.CenterAndFocusWindow()
+
+		// 2. Then run your Bubble Tea UI loop
 		p := tea.NewProgram(popup.InitialPopupModel(*chirpID))
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Popup interface crash: %v\n", err)
