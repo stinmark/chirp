@@ -1,27 +1,8 @@
-package data
+package storage
 
-import (
-	"crypto/rand"
-	"encoding/hex"
-	"encoding/json"
-	"log"
-	"os"
-	"time"
-)
-
+/*
 // FilterValue satisfies the charm.land/bubbles/list.Item interface
-func (c ChirpModel) FilterValue() string {
-	return c.Title + " " + c.ID
-}
 
-// GenerateShortID creates a 4-character unique random hex string (e.g., "a2f9")
-func GenerateShortID() string {
-	bytes := make([]byte, 2)
-	if _, err := rand.Read(bytes); err != nil {
-		return time.Now().Format("0504")
-	}
-	return hex.EncodeToString(bytes)
-}
 
 func LoadChirps() ([]ChirpModel, error) {
 	path := GetChirpsFilePath()
@@ -66,4 +47,4 @@ func SaveChirps(chirps []ChirpModel) error {
 		return err
 	}
 	return os.WriteFile(path, data, 0o644)
-}
+}*/

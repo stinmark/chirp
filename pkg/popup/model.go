@@ -3,15 +3,13 @@ package popup
 import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/stinmark/chirp/pkg/daemon"
-	"github.com/stinmark/chirp/pkg/data"
+	"github.com/stinmark/chirp/pkg/storage"
 )
-
-// 1. Tell Go to embed the entire assets directory automatically
 
 type FrameMsg struct{}
 
 type PopupModel struct {
-	Chirp          data.ChirpModel
+	Chirp          storage.ChirpModel
 	DaemonRunning  bool
 	currentFrame   int
 	TerminalWidth  int
@@ -19,10 +17,10 @@ type PopupModel struct {
 }
 
 func InitialPopupModel(id string) PopupModel {
-	chirps, _ := data.LoadChirps()
-	var targeted data.ChirpModel
+	store, _ := storage.Load()
+	var targeted storage.ChirpModel
 
-	for _, c := range chirps {
+	for _, c := range store.Chirps {
 		if c.ID == id {
 			targeted = c
 			break
@@ -30,7 +28,7 @@ func InitialPopupModel(id string) PopupModel {
 	}
 
 	if targeted.ID == "" {
-		targeted = data.ChirpModel{Title: "Take a Break!", Message: "Time to stretch."}
+		targeted = storage.ChirpModel{Message: "Time to stretch."}
 	}
 
 	return PopupModel{

@@ -21,24 +21,20 @@ func (m PopupModel) View() tea.View {
 	// 2. Render your layout elements
 	artStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true).Render(birdArt)
 	//bannerTitle := theme.GenerateTexturedShadowTitle(theme.TruncateString("CHIRP", 10, false), "1")
-	bannerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("1")).
-		Border(lipgloss.NormalBorder(), false, false, true, false). // Bottom border only                                        // Fills exact width of content
-		AlignHorizontal(lipgloss.Center).Render(bannerText)
 
 	var middlePanel []string
 	middlePanel = append(middlePanel, artStyled)
-	middlePanel = append(middlePanel, theme.AccentStyle.Width(40).AlignHorizontal(lipgloss.Right).Render(bannerStyle+"\n\n"+m.Chirp.Message)+"\n")
+	middlePanel = append(middlePanel, theme.AccentStyle.Width(40).AlignHorizontal(lipgloss.Right).Render(m.Chirp.Message)+"\n")
 
 	var bottomPanel []string
-	bottomPanel = append(bottomPanel, theme.MutedStyle.Render("daemon "+helpers.Ternary(m.DaemonRunning, "RUNNING", "STOPPED")))
+	bottomPanel = append(bottomPanel, theme.MutedStyle.Render("daemon "+helpers.Ternary(m.DaemonRunning, "● Running", "● stopped")))
 
 	if m.Chirp.AutoRepeat {
-		bottomPanel = append(bottomPanel, theme.ActiveStye.Render(" | AutoRepeat |"))
-		bottomPanel = append(bottomPanel, theme.MutedStyle.Render(" [r] stop repeat [s/q] quit"))
+		bottomPanel = append(bottomPanel, theme.ActiveStye.Render("mode: AutoRepeat"))
+		bottomPanel = append(bottomPanel, theme.MutedStyle.Render("[r] stop repeat [s/q] quit"))
 	} else {
-		bottomPanel = append(bottomPanel, theme.ActiveStye.Render(" | Run Once |"))
-		bottomPanel = append(bottomPanel, theme.MutedStyle.Render(" [r] repeat [s/q] quit"))
+		bottomPanel = append(bottomPanel, theme.ActiveStye.Render("mode: Run Once"))
+		bottomPanel = append(bottomPanel, theme.MutedStyle.Render("[r] repeat [s/q] quit"))
 	}
 
 	// 3. Join layout elements together Dynamically
@@ -48,6 +44,13 @@ func (m PopupModel) View() tea.View {
 	contentWidth := lipgloss.Width(middleView)
 
 	// --- STEP 3B: Use that exact width to stretch your banner and bottom panel ---
+	bannerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("1")).
+		Border(lipgloss.NormalBorder(), false, false, true, false). // Bottom border only
+		Width(contentWidth).                                        // Fills exact width of content
+		AlignHorizontal(lipgloss.Center)
+
+	bannerView := bannerStyle.Render(bannerText)
 
 	bottomStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder(), true, false, false, false). // Top border only
@@ -60,13 +63,14 @@ func (m PopupModel) View() tea.View {
 	// --- STEP 3C: Stack them vertically and wrap in the main outer box ---
 	stackedLayout := lipgloss.JoinVertical(
 		lipgloss.Center,
+		bannerView,
 		middleView,
 		bottomView,
 	)
 
 	combinedView := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("4")).
+		BorderForeground(lipgloss.Color("8")).
 		Padding(2).
 		Render(stackedLayout)
 

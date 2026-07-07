@@ -4,7 +4,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/stinmark/chirp/pkg/data"
+	"github.com/stinmark/chirp/pkg/storage"
 )
 
 func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -18,30 +18,30 @@ func (m PopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "r", "s", "q", "escape":
-			chirps, err := data.LoadChirps()
+			store, err := storage.Load()
 			if err == nil {
-				for i, c := range chirps {
-					if c.ID == m.Chirp.ID {
-						// 👈 The window is closing, clear the opened flag
-						chirps[i].IsOpened = false
+				// 👈 The window is closing, clear the top-level active popup ID track
+				store.SetOpenedChirp("")
 
+				for i, c := range store.Chirps {
+					if c.ID == m.Chirp.ID {
 						// If 'r' is pressed, flip the autocomplete/autorepeat setting first
 						if msg.String() == "r" {
-							chirps[i].AutoRepeat = !chirps[i].AutoRepeat
+							store.Chirps[i].AutoRepeat = !store.Chirps[i].AutoRepeat
 						}
 
 						// Handle scheduling based on the (potentially flipped) AutoRepeat state
-						if chirps[i].AutoRepeat {
+						if store.Chirps[i].AutoRepeat {
 							// Reschedule the next run from the MOMENT they close it
-							chirps[i].NextRun = time.Now().Add(time.Duration(chirps[i].DurationMin) * time.Minute)
-							chirps[i].IsActive = true
+							store.Chirps[i].NextRun = time.Now().Add(time.Duration(store.Chirps[i].DurationMin) * time.Minute)
+							store.Chirps[i].IsActive = true
 						} else {
-							chirps[i].IsActive = false
+							store.Chirps[i].IsActive = false
 						}
 						break
 					}
 				}
-				_ = data.SaveChirps(chirps)
+				_ = storage.Save(store)
 			}
 			return m, tea.Quit
 		}

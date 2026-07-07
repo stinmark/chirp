@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/stinmark/chirp/pkg/data"
 	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/storage"
 	"github.com/stinmark/chirp/pkg/window"
 )
 
@@ -20,19 +20,19 @@ func RunDaemon() {
 	// -------------------------------------------------------------------------
 	// INITIALIZATION PASS: Reset overdue active tasks so they don't fire all at once
 	// -------------------------------------------------------------------------
-	if chirps, err := data.LoadChirps(); err == nil {
+	if store, err := storage.Load(); err == nil {
 		changed := false
-		for i, chirp := range chirps {
+		for i, chirp := range store.Chirps {
 			// If a task is active but its scheduled time has already passed while
 			// the daemon was stopped, push its next run forward from *now*.
 			if chirp.IsActive && now.After(chirp.NextRun) {
-				log.Printf("🔄 Resetting stale schedule for profile [%s] (%s) to avoid pile-up\n", chirp.ID, chirp.Title)
-				chirps[i].NextRun = now.Add(time.Duration(chirp.DurationMin) * time.Minute)
+				log.Printf("🔄 Resetting stale schedule for profile [%s] to avoid pile-up\n", chirp.ID)
+				store.Chirps[i].NextRun = now.Add(time.Duration(chirp.DurationMin) * time.Minute)
 				changed = true
 			}
 		}
 		if changed {
-			_ = data.SaveChirps(chirps)
+			_ = storage.Save(store)
 		}
 	}
 
@@ -41,7 +41,7 @@ func RunDaemon() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		chirps, err := data.LoadChirps()
+		store, err := storage.Load()
 		if err != nil {
 			continue
 		}
@@ -50,22 +50,21 @@ func RunDaemon() {
 		now = time.Now()
 		activeCount := 0
 
-		for i, chirp := range chirps {
+		for _, chirp := range store.Chirps {
 			if !chirp.IsActive {
 				continue
 			}
 
 			activeCount++ // Found an active profile! Keep it counted.
 
-			if chirp.IsOpened {
+			if store.IsChirpOpen(chirp.ID) {
 				continue
 			}
 
 			if now.After(chirp.NextRun) {
-				log.Printf("⏰ Target hit for profile [%s]: %s\n", chirp.ID, chirp.Title)
+				log.Printf("⏰ Target hit for profile [%s]\n", chirp.ID)
 
-				// Set IsOpened to true so we don't spawn duplicate windows next tick
-				chirps[i].IsOpened = true
+				store.SetOpenedChirp(chirp.ID)
 				changed = true
 
 				_ = window.SpawnFloatingWindow(terminalApp, executable, chirp.ID)
@@ -73,7 +72,7 @@ func RunDaemon() {
 		}
 
 		if changed {
-			_ = data.SaveChirps(chirps)
+			_ = storage.Save(store)
 		}
 
 		// Self-termination safety logic is now 100% safe.

@@ -1,11 +1,12 @@
 package dashboard
 
 import (
+	_ "embed"
 	"fmt"
 	"io"
 
-	"github.com/stinmark/chirp/pkg/data"
 	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/storage"
 	"github.com/stinmark/chirp/pkg/theme"
 
 	"charm.land/bubbles/v2/list"
@@ -13,20 +14,23 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+//go:embed banner.txt
+var bannerText string
+
 func (d chirpDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	t, ok := listItem.(data.ChirpModel)
+	t, ok := listItem.(storage.ChirpModel)
 	if !ok {
 		return
 	}
 
-	// Dynamically determine prefix based on whether the task repeat
 	taskRow := fmt.Sprintf(
-		"%d. [%s] %s\n    %s %dm | %s",
+		"%d. [%s] %s\n    %s %dm | sound: %s | %s",
 		index+1,
 		theme.MutedStyle.Render(t.ID),
-		t.Title,
+		theme.TruncateString(t.Message, 30, true),
 		theme.MutedStyle.Render(helpers.Ternary(t.AutoRepeat, "Every", "After")),
 		t.DurationMin,
+		helpers.Ternary(t.PlaySound, "on", "off"),
 		helpers.Ternary(t.IsActive, theme.ActiveStye.Render(fmt.Sprintf("next (%s)", t.NextRun.Format("15:04:05"))), theme.MutedStyle.Render("Inactive")),
 	)
 
@@ -42,14 +46,15 @@ func (d chirpDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 func (m dashboardModel) View() tea.View {
 	var segments []string
 
-	segments = append(segments, theme.GenerateTexturedShadowTitle("CHIRP HUB", "1"))
-	// Display both Daemon execution status and Explicit Boot configuration status
+	segments = append(segments, lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render(bannerText))
 	statusLine := fmt.Sprintf(
-		"--- daemon: %s | launch on startup: %s\n",
-		helpers.Ternary(m.daemonRunning, "running", "stopped"),
+		"daemon %s | launch on startup %s\n",
+		helpers.Ternary(m.daemonRunning, "RUNNING", "STOPPED"),
 		helpers.Ternary(m.autostartEnabled, "ENABLED", "DISABLED"),
 	)
-	segments = append(segments, lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("8")).Render(statusLine))
+	segments = append(segments, lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("8")).
+		Border(lipgloss.NormalBorder(), true, false, true, false).BorderForeground(lipgloss.Color("4")).Width(70).AlignHorizontal(lipgloss.Center).
+		Render(statusLine))
 
 	if m.state == viewChirps {
 		if len(m.chirpList.Items()) == 0 {
@@ -58,11 +63,14 @@ func (m dashboardModel) View() tea.View {
 			segments = append(segments, m.chirpList.View())
 		}
 
-		segments = append(segments, theme.HelpStyle.Render("[n] New Chirp • [space] Toggle • [o] Toggle Startup • [s] Start/Stop Daemon • [d] Delete • [/] Filter • [q] Quit"))
+		segments = append(segments, theme.HelpStyle.Border(lipgloss.NormalBorder(), true, false, true, false).BorderForeground(lipgloss.Color("3")).
+			AlignHorizontal(lipgloss.Center).Width(70).
+			Render("[n] New Chirp • [space] Toggle • [o] Toggle Startup • [s] Start/Stop Daemon • [d] Delete • [/] Filter • [q] Quit"))
 	} else {
 		segments = append(segments, theme.TitleStyle.Render("CREATE NEW SCHEDULER PROFILE \n"))
 
-		labels := []string{"Window Title:   ", "Sweet Message:  ", "Timeout (Mins): ", "AutoRepeat(y/n):"}
+		// Cleaned labels array reflecting structural field updates
+		labels := []string{"Sweet Message:  ", "Play Sound(y/n):", "Timeout (Mins): ", "AutoRepeat(y/n):"}
 		for i, label := range labels {
 			rowText := fmt.Sprintf("%s %s", label, theme.InputStyle.Render(m.inputs[i].View()))
 			if m.inputIndex == i {

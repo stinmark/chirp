@@ -7,8 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stinmark/chirp/pkg/daemon"
-	"github.com/stinmark/chirp/pkg/data"
-	"github.com/stinmark/chirp/pkg/helpers"
+	"github.com/stinmark/chirp/pkg/storage"
 )
 
 // handleGlobalKeys intercepts keys that apply regardless of what screen the user is viewing.
@@ -17,13 +16,12 @@ func (m dashboardModel) handleGlobalKeys(msg tea.KeyPressMsg) (dashboardModel, b
 	case "ctrl+c":
 		return m, true, tea.Quit
 	case "q":
-		// Only quit on 'q' if we are not actively filling a form or typing a search filter
 		if m.state == viewChirps && !m.chirpList.SettingFilter() {
 			return m, true, tea.Quit
 		}
 	case "escape":
 		if m.state == createChirp {
-			m.state = viewChirps // Safely abandon form input
+			m.state = viewChirps
 			return m, true, nil
 		}
 	}
@@ -34,7 +32,6 @@ func (m dashboardModel) handleGlobalKeys(msg tea.KeyPressMsg) (dashboardModel, b
 func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	// If bubbles list is in filtering mode, pass key events straight through to the list directly
 	if m.chirpList.SettingFilter() {
 		m.chirpList, cmd = m.chirpList.Update(msg)
 		return m, cmd
@@ -60,14 +57,17 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 			m.errMessage = ""
 		}
 
-	case "o": // 👈 New keybind specifically to toggle startup behavior
-		enabled, _ := helpers.ToggleAutostart()
-		m.autostartEnabled = enabled
+	case "o":
+		if store, err := storage.Load(); err == nil {
+			store.RunOnStartup = !store.RunOnStartup
+			_ = storage.Save(store)
+			m.autostartEnabled = store.RunOnStartup
+		}
 
 	case "space":
 		if len(m.chirpList.Items()) > 0 {
 			idx := m.chirpList.Index()
-			if chirp, ok := m.chirpList.SelectedItem().(data.ChirpModel); ok {
+			if chirp, ok := m.chirpList.SelectedItem().(storage.ChirpModel); ok {
 				chirp.IsActive = !chirp.IsActive
 				if chirp.IsActive {
 					chirp.NextRun = time.Now().Add(time.Duration(chirp.DurationMin) * time.Minute)
@@ -76,22 +76,23 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 					}
 				}
 				m.chirpList.SetItem(idx, chirp)
-				_ = data.SaveChirps(m.getChirps())
 
-				// Ensure OS handles deletion/addition based on explicit configuration status
-				_ = helpers.SyncAutostartWithOS(m.autostartEnabled, m.getChirps())
+				if store, err := storage.Load(); err == nil {
+					store.Chirps = m.getChirps()
+					_ = storage.Save(store)
+				}
 			}
 		}
 
 	case "d":
 		if len(m.chirpList.Items()) > 0 {
 			m.chirpList.RemoveItem(m.chirpList.Index())
-			_ = data.SaveChirps(m.getChirps())
-			// Re-verify if last active task was cleared out
-			_ = helpers.SyncAutostartWithOS(m.autostartEnabled, m.getChirps())
+			if store, err := storage.Load(); err == nil {
+				store.Chirps = m.getChirps()
+				_ = storage.Save(store)
+			}
 		}
 	default:
-		// Forward arrow keys / standard list keys to the bubble list engine natively
 		m.chirpList, cmd = m.chirpList.Update(msg)
 		return m, cmd
 	}
@@ -116,11 +117,9 @@ func (m dashboardModel) handleCreateTaskKeys(msg tea.KeyPressMsg) (tea.Model, te
 			m.inputIndex++
 			m.inputs[m.inputIndex].Focus()
 		} else {
-			// Validate and process the final form submission
 			return m.submitNewTask()
 		}
 	default:
-		// Route letters/numbers straight into the currently focused text field package
 		m.inputs[m.inputIndex], cmd = m.inputs[m.inputIndex].Update(msg)
 		return m, cmd
 	}
@@ -129,6 +128,7 @@ func (m dashboardModel) handleCreateTaskKeys(msg tea.KeyPressMsg) (tea.Model, te
 }
 
 func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
+	// index 2 is now Timeout/Duration
 	rawMins := strings.TrimSpace(m.inputs[2].Value())
 	if rawMins == "" {
 		rawMins = "20"
@@ -140,13 +140,17 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// Parsing boolean values for PlaySound (1) and AutoRepeat (3)
+	soundVal := strings.ToLower(strings.TrimSpace(m.inputs[1].Value()))
+	playSound := soundVal == "y" || soundVal == "yes" || soundVal == ""
+
 	repeatVal := strings.ToLower(strings.TrimSpace(m.inputs[3].Value()))
 	isRepeat := repeatVal == "y" || repeatVal == "yes" || repeatVal == ""
 
-	newTask := data.ChirpModel{
-		ID:          data.GenerateShortID(),
-		Title:       m.inputs[0].Value(),
-		Message:     m.inputs[1].Value(),
+	newTask := storage.ChirpModel{
+		ID:          storage.GenerateShortID(),
+		Message:     m.inputs[0].Value(),
+		PlaySound:   playSound,
 		DurationMin: mins,
 		AutoRepeat:  isRepeat,
 		IsActive:    true,
@@ -154,7 +158,11 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 	}
 
 	m.chirpList.InsertItem(len(m.chirpList.Items()), newTask)
-	_ = data.SaveChirps(m.getChirps())
+
+	if store, err := storage.Load(); err == nil {
+		store.Chirps = m.getChirps()
+		_ = storage.Save(store)
+	}
 	daemon.StartDaemon()
 
 	m.state = viewChirps
