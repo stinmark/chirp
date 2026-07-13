@@ -85,7 +85,24 @@ func (m dashboardModel) View() tea.View {
 		segments = append(segments, theme.HelpStyle.Render("[Esc] Cancel • [Tab/Arrows] Navigate • [Enter] Next / Save"))
 	}
 
-	v := tea.NewView(lipgloss.NewStyle().Padding(1, 3).Render(lipgloss.JoinVertical(lipgloss.Left, segments...)))
+	// Join segments vertically (Left-aligned inner content)
+	content := lipgloss.JoinVertical(lipgloss.Center, segments...)
+
+	var finalView string
+	// If we have received terminal dimensions, center the content block fully on screen
+	if m.terminalWidth > 0 && m.terminalHeight > 0 {
+		finalView = lipgloss.NewStyle().
+			Width(m.terminalWidth).
+			Height(m.terminalHeight).
+			AlignHorizontal(lipgloss.Center).
+			AlignVertical(lipgloss.Center).
+			Render(content)
+	} else {
+		// Fallback padding if we haven't received the size payload yet
+		finalView = lipgloss.NewStyle().Padding(1, 3).Render(content)
+	}
+
+	v := tea.NewView(finalView)
 	v.AltScreen = true
 	return v
 }

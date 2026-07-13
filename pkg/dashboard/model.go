@@ -17,12 +17,14 @@ const (
 )
 
 type dashboardModel struct {
-	state         sessionState
-	chirpList     list.Model
-	inputIndex    int
-	inputs        []textinput.Model
-	errMessage    string
-	daemonRunning bool
+	state          sessionState
+	chirpList      list.Model
+	inputIndex     int
+	inputs         []textinput.Model
+	errMessage     string
+	daemonRunning  bool
+	terminalWidth  int // Added to track width for centering
+	terminalHeight int // Added to track height for centering
 }
 
 type chirpDelegate struct{}
@@ -45,7 +47,7 @@ func InitialDashboardModel() dashboardModel {
 	chirpGrid.SetShowHelp(false)
 	chirpGrid.SetSize(80, 14)
 
-	// Maintains 4 distinct form elements tailored to the actual model structure
+	// Maintains 3 distinct form elements tailored to the actual model structure
 	inputs := make([]textinput.Model, 3)
 	for i := range inputs {
 		inputs[i] = textinput.New()
@@ -80,6 +82,11 @@ func (m dashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg: // Added to capture terminal resizing dynamically
+		m.terminalWidth = msg.Width
+		m.terminalHeight = msg.Height
+		return m, nil
+
 	case tea.KeyPressMsg:
 		if updatedModel, handled, globalCmd := m.handleGlobalKeys(msg); handled {
 			return updatedModel, globalCmd
