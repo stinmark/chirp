@@ -48,14 +48,6 @@ func Execute() {
 			logDir := filepath.Join(configDir, "chirp")
 			_ = os.MkdirAll(logDir, 0o755)
 
-			// Write log output files
-			logFile, err := os.OpenFile(filepath.Join(logDir, "daemon.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-			if err == nil {
-				cmd.Stdout = logFile
-				cmd.Stderr = logFile
-				defer logFile.Close()
-			}
-
 			if err := cmd.Start(); err != nil {
 				fmt.Printf("❌ Failed to split engine thread: %v\n", err)
 				return
