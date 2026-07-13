@@ -52,10 +52,9 @@ pick_install_dir() {
 }
 
 latest_version() {
-  # Force HTTP/1.1 to prevent OpenSSL 3.x EOF crashes
-  curl --http1.1 -fsSL "https://api.github.com/repos/${REPO}/releases/latest" |
-    grep '"tag_name":' |
-    sed -E 's/.*"tag_name": *"([^"]+)".*/\1/'
+  # Queries the UI redirect instead of the API to completely avoid 403 rate limits
+  curl -f -S -L -I -o /dev/null -w "%{url_effective}" "https://github.com/${REPO}/releases/latest" |
+    awk -F'/' '{print $NF}'
 }
 
 main() {
