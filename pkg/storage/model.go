@@ -16,10 +16,9 @@ import (
 // ==========================================
 
 type ChirpStorage struct {
-	Version      int          `json:"version"`
-	RunOnStartup bool         `json:"run_on_startup"`
-	OpenedChirp  string       `json:"opened_chirp"`
-	Chirps       []ChirpModel `json:"chirps"`
+	Version     int          `json:"version"`
+	OpenedChirp string       `json:"opened_chirp"`
+	Chirps      []ChirpModel `json:"chirps"`
 }
 
 const CurrentSchemaVersion = 1
@@ -32,10 +31,9 @@ type ChirpModel struct {
 	AutoRepeat  bool      `json:"auto_repeat"`
 	IsActive    bool      `json:"is_active"`
 	NextRun     time.Time `json:"next_run"`
-	IsOpened    bool      `json:"is_opened"`
 }
 
-// GetChirpsFilePath Uses AppData on Windows, ~/.config on Linux automatically
+// GetStorageFilePath Uses AppData on Windows, ~/.config on Linux automatically
 func GetStorageFilePath() string {
 	baseDir, err := os.UserConfigDir()
 	if err != nil {
@@ -46,7 +44,7 @@ func GetStorageFilePath() string {
 	return filepath.Join(dir, "storage.json")
 }
 
-// LoadStorage reads the full storage structure from disk, handling migration if necessary.
+// Load reads the full storage structure from disk, handling migration if necessary.
 func Load() (ChirpStorage, error) {
 	path := GetStorageFilePath()
 	var storage ChirpStorage
@@ -81,7 +79,7 @@ func Load() (ChirpStorage, error) {
 	return storage, nil
 }
 
-// SaveStorage writes the entire ChirpStorage structure to disk.
+// Save writes the entire ChirpStorage structure to disk.
 func Save(storage ChirpStorage) error {
 	path := GetStorageFilePath()
 	storage.Version = CurrentSchemaVersion // Ensure the schema version stays accurate

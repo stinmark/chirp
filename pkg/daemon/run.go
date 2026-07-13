@@ -1,3 +1,4 @@
+// Package daemon manages background running of the tool
 package daemon
 
 import (

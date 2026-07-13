@@ -57,12 +57,12 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 			m.errMessage = ""
 		}
 
-	case "o":
-		if store, err := storage.Load(); err == nil {
-			store.RunOnStartup = !store.RunOnStartup
-			_ = storage.Save(store)
-			m.autostartEnabled = store.RunOnStartup
-		}
+	/*case "o":
+	if store, err := storage.Load(); err == nil {
+		store.RunOnStartup = !store.RunOnStartup
+		_ = storage.Save(store)
+		m.autostartEnabled = store.RunOnStartup
+	}*/
 
 	case "space":
 		if len(m.chirpList.Items()) > 0 {

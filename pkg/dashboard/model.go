@@ -17,13 +17,12 @@ const (
 )
 
 type dashboardModel struct {
-	state            sessionState
-	chirpList        list.Model
-	inputIndex       int
-	inputs           []textinput.Model
-	errMessage       string
-	daemonRunning    bool
-	autostartEnabled bool
+	state         sessionState
+	chirpList     list.Model
+	inputIndex    int
+	inputs        []textinput.Model
+	errMessage    string
+	daemonRunning bool
 }
 
 type chirpDelegate struct{}
@@ -56,11 +55,10 @@ func InitialDashboardModel() dashboardModel {
 	inputs[0].Focus()
 
 	return dashboardModel{
-		state:            viewChirps,
-		chirpList:        chirpGrid,
-		inputs:           inputs,
-		daemonRunning:    daemon.IsDaemonRunning(),
-		autostartEnabled: store.RunOnStartup,
+		state:         viewChirps,
+		chirpList:     chirpGrid,
+		inputs:        inputs,
+		daemonRunning: daemon.IsDaemonRunning(),
 	}
 }
 
