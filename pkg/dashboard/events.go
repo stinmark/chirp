@@ -47,7 +47,7 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 		time.Sleep(50 * time.Millisecond)
 		m.daemonRunning = daemon.IsDaemonRunning()
 	case "n":
-		if len(m.chirpList.Items()) < 50 {
+		if len(m.chirpList.Items()) < 1 {
 			m.state = createChirp
 			m.inputIndex = 0
 			for i := range m.inputs {
@@ -112,7 +112,7 @@ func (m dashboardModel) handleCreateTaskKeys(msg tea.KeyPressMsg) (tea.Model, te
 			m.inputs[m.inputIndex].Focus()
 		}
 	case "down", "tab", "enter":
-		if m.inputIndex < 3 {
+		if m.inputIndex < 2 {
 			m.inputs[m.inputIndex].Blur()
 			m.inputIndex++
 			m.inputs[m.inputIndex].Focus()
@@ -129,7 +129,7 @@ func (m dashboardModel) handleCreateTaskKeys(msg tea.KeyPressMsg) (tea.Model, te
 
 func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 	// index 2 is now Timeout/Duration
-	rawMins := strings.TrimSpace(m.inputs[2].Value())
+	rawMins := strings.TrimSpace(m.inputs[1].Value())
 	if rawMins == "" {
 		rawMins = "20"
 	}
@@ -140,17 +140,14 @@ func (m dashboardModel) submitNewTask() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Parsing boolean values for PlaySound (1) and AutoRepeat (3)
-	soundVal := strings.ToLower(strings.TrimSpace(m.inputs[1].Value()))
-	playSound := soundVal == "y" || soundVal == "yes" || soundVal == ""
+	// Parsing boolean values for AutoRepeat (2)
 
-	repeatVal := strings.ToLower(strings.TrimSpace(m.inputs[3].Value()))
+	repeatVal := strings.ToLower(strings.TrimSpace(m.inputs[2].Value()))
 	isRepeat := repeatVal == "y" || repeatVal == "yes" || repeatVal == ""
 
 	newTask := storage.ChirpModel{
 		ID:          storage.GenerateShortID(),
 		Message:     m.inputs[0].Value(),
-		PlaySound:   playSound,
 		DurationMin: mins,
 		AutoRepeat:  isRepeat,
 		IsActive:    true,

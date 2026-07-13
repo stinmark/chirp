@@ -26,7 +26,6 @@ const CurrentSchemaVersion = 1
 type ChirpModel struct {
 	ID          string    `json:"id"`
 	Message     string    `json:"message"`
-	PlaySound   bool      `json:"play_sound"`
 	DurationMin int       `json:"duration_min"`
 	AutoRepeat  bool      `json:"auto_repeat"`
 	IsActive    bool      `json:"is_active"`

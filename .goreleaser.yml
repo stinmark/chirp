@@ -1,0 +1,57 @@
+version: 2
+
+project_name: chirp
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: chirp
+    main: .
+    binary: chirp
+    env:
+      - CGO_ENABLED=0
+    # chirp only has platform-specific window handling for linux and windows
+    # (see pkg/window/linux.go and pkg/window/windows.go) — no darwin support yet.
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - id: chirp-archive
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+release:
+  github:
+    owner: stinmark
+    name: chirp
+  draft: false
+  prerelease: auto
+
+# Homebrew/Scoop/etc can be added here later if you want package-manager installs.

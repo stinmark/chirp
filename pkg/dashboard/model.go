@@ -46,7 +46,7 @@ func InitialDashboardModel() dashboardModel {
 	chirpGrid.SetSize(80, 14)
 
 	// Maintains 4 distinct form elements tailored to the actual model structure
-	inputs := make([]textinput.Model, 4)
+	inputs := make([]textinput.Model, 3)
 	for i := range inputs {
 		inputs[i] = textinput.New()
 		inputs[i].Placeholder = ""

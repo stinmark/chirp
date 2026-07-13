@@ -24,13 +24,12 @@ func (d chirpDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 	}
 
 	taskRow := fmt.Sprintf(
-		"%d. [%s] %s\n    %s %dm | sound: %s | %s",
+		"%d. [%s] %s\n    %s %dm |  %s",
 		index+1,
 		theme.MutedStyle.Render(t.ID),
 		theme.TruncateString(t.Message, 50, true),
 		theme.MutedStyle.Render(helpers.Ternary(t.AutoRepeat, "Every", "After")),
 		t.DurationMin,
-		helpers.Ternary(t.PlaySound, "on", "off"),
 		helpers.Ternary(t.IsActive, theme.ActiveStye.Render(fmt.Sprintf("next (%s)", t.NextRun.Format("15:04:05"))), theme.MutedStyle.Render("Inactive")),
 	)
 
@@ -59,7 +58,8 @@ func (m dashboardModel) View() tea.View {
 		if len(m.chirpList.Items()) == 0 {
 			segments = append(segments, theme.HelpStyle.Render("  No active profiles found. Press [n] to create one.\n"))
 		} else {
-			segments = append(segments, lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(lipgloss.Color("4")).Width(70).Padding(2).Render(m.chirpList.View()))
+			segments = append(segments, lipgloss.NewStyle().Border(lipgloss.NormalBorder()).
+				BorderForeground(lipgloss.Color("4")).Width(70).Padding(2).Render(m.chirpList.View()))
 		}
 
 		segments = append(segments, theme.HelpStyle.
@@ -69,7 +69,7 @@ func (m dashboardModel) View() tea.View {
 		segments = append(segments, theme.TitleStyle.Render("CREATE NEW SCHEDULER PROFILE \n"))
 
 		// Cleaned labels array reflecting structural field updates
-		labels := []string{"Sweet Message:  ", "Play Sound(y/n):", "Timeout (Mins): ", "AutoRepeat(y/n):"}
+		labels := []string{"Sweet Message:  ", "Timeout (Mins): ", "AutoRepeat(y/n):"}
 		for i, label := range labels {
 			rowText := fmt.Sprintf("%s %s", label, theme.InputStyle.Render(m.inputs[i].View()))
 			if m.inputIndex == i {
