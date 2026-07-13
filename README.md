@@ -11,20 +11,24 @@
 ░
 ```
 
-**chirp** is a lightweight terminal reminder tool. Set a message and an interval, and chirp pops up a small floating window in your terminal to nudge you — to stretch, take a break, drink water, or whatever else you need to remember — right on schedule.
+**chirp** is a lightweight terminal reminder tool. Set a message and an interval, and chirp pops up a small floating window in your terminal to nudge you to stretch, take a break, drink water, or whatever else you need to remember right on schedule.
 
-## Showcase
+## Poup Showcase
 
 ![popup showcase](./assets/showcase.png)
 
+## Dashboard Showcase
+
+![dashbaord showcase](./assets/showcase1.png)
+
 ## Features
 
-- 🐣 **Simple dashboard** — a terminal UI for creating, viewing, and managing your reminders ("chirps")
-- ⏰ **Background daemon** — runs quietly in the background and checks every few seconds for due reminders
-- 🔁 **Auto-repeat** — set a chirp to fire once or keep repeating on its interval
-- 🪟 **Floating popups** — when a chirp is due, a small centered popup window pops up on top of everything else
-- 💻 **Cross-platform** — native support for Windows and Linux (including Hyprland, GNOME, and KDE window placement)
-- 💾 **Local storage only** — reminders are stored in a small JSON file in your OS config directory; nothing leaves your machine
+- **Simple dashboard** — a terminal UI for creating, viewing, and managing your reminders ("chirps")
+- **Background daemon** — runs quietly in the background and checks every few seconds for due reminders
+- **Auto-repeat** — set a chirp to fire once or keep repeating on its interval
+- **Floating popups** — when a chirp is due, a small centered popup window pops up on top of everything else
+- **Cross-platform** — native support for Windows and Linux (including Hyprland, GNOME, and KDE window placement)
+- **Local storage only** — reminders are stored in a small JSON file in your OS config directory; nothing leaves your machine
 
 ## Installation
 
@@ -74,7 +78,7 @@ Once you have at least one active chirp, start the background daemon so it can a
 chirp --run-daemon
 ```
 
-The daemon forks itself into the background, watches your chirps, and spawns a floating popup window whenever one comes due. It automatically shuts itself down once there are no more active chirps, so you don't need to manage it by hand — just start it again whenever you add a new one.
+The daemon forks itself into the background, watches your chirps, and spawns a floating popup window whenever one comes due. It automatically shuts itself down once there are no more active chirps, so you don't need to manage it by hand, just start it again whenever you add a new one.
 
 To stop the daemon manually:
 

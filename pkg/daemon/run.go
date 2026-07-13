@@ -18,9 +18,7 @@ func RunDaemon() {
 	executable, _ := os.Executable()
 	now := time.Now()
 
-	// -------------------------------------------------------------------------
-	// INITIALIZATION PASS: Reset overdue active tasks so they don't fire all at once
-	// -------------------------------------------------------------------------
+	// Reset overdue active tasks so they don't fire all at once
 	if store, err := storage.Load(); err == nil {
 		changed := false
 		for i, chirp := range store.Chirps {
@@ -56,7 +54,7 @@ func RunDaemon() {
 				continue
 			}
 
-			activeCount++ // Found an active profile! Keep it counted.
+			activeCount++
 
 			if store.IsChirpOpen(chirp.ID) {
 				continue
@@ -76,8 +74,7 @@ func RunDaemon() {
 			_ = storage.Save(store)
 		}
 
-		// Self-termination safety logic is now 100% safe.
-		// activeCount remains > 0 because your task stays active while open!
+		// Self-termination runs if no active task found
 		if activeCount == 0 {
 			log.Println("💤 No active profiles found running. Giving workspace windows a second to map before exit...")
 			time.Sleep(2 * time.Second)
