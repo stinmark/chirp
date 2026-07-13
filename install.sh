@@ -52,9 +52,15 @@ pick_install_dir() {
 }
 
 latest_version() {
-  curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" |
-    grep '"tag_name":' |
-    sed -E 's/.*"tag_name": *"([^"]+)".*/\1/'
+  # Resolve the "latest" redirect on github.com itself instead of calling
+  # api.github.com — the API is rate-limited to 60 unauthenticated
+  # requests/hour per IP, which install scripts can easily burn through.
+  # The releases/latest page redirects to releases/tag/vX.Y.Z, and that
+  # redirect isn't subject to the same limit.
+  redirect_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' \
+    "https://github.com/${REPO}/releases/latest")"
+  version="${redirect_url##*/}"
+  [ -n "$version" ] && [ "$version" != "latest" ] && echo "$version"
 }
 
 main() {
