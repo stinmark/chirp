@@ -13,7 +13,7 @@
 
 **chirp** is a lightweight terminal reminder tool. Set a message and an interval, and chirp pops up a small floating window in your terminal to nudge you to stretch, take a break, drink water, or whatever else you need to remember right on schedule.
 
-## Poup Showcase
+## Popup Showcase
 
 ![popup showcase](./assets/showcase.png)
 
