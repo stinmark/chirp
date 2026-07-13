@@ -52,15 +52,9 @@ pick_install_dir() {
 }
 
 latest_version() {
-  # Resolve the "latest" redirect on github.com itself instead of calling
-  # api.github.com — the API is rate-limited to 60 unauthenticated
-  # requests/hour per IP, which install scripts can easily burn through.
-  # The releases/latest page redirects to releases/tag/vX.Y.Z, and that
-  # redirect isn't subject to the same limit.
-  redirect_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' \
-    "https://github.com/${REPO}/releases/latest")"
-  version="${redirect_url##*/}"
-  [ -n "$version" ] && [ "$version" != "latest" ] && echo "$version"
+  # Queries the UI redirect instead of the API to avoid 403 rate limits
+  curl -f -S -L -I -o /dev/null -w "%{url_effective}" "https://github.com/${REPO}/releases/latest" |
+    awk -F'/' '{print $NF}'
 }
 
 main() {
