@@ -47,7 +47,7 @@ func (m dashboardModel) handleViewTasksKeys(msg tea.KeyPressMsg) (tea.Model, tea
 		time.Sleep(50 * time.Millisecond)
 		m.daemonRunning = daemon.IsDaemonRunning()
 	case "n":
-		if len(m.chirpList.Items()) < 1 {
+		if len(m.chirpList.Items()) < 50 {
 			m.state = createChirp
 			m.inputIndex = 0
 			for i := range m.inputs {
